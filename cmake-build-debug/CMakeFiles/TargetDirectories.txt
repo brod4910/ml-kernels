@@ -1,0 +1,11 @@
+/Users/brodriguez/Development/luna/cmake-build-debug/CMakeFiles/luna.dir
+/Users/brodriguez/Development/luna/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/brodriguez/Development/luna/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/brodriguez/Development/luna/cmake-build-debug/examples/CMakeFiles/edit_cache.dir
+/Users/brodriguez/Development/luna/cmake-build-debug/examples/CMakeFiles/rebuild_cache.dir
+/Users/brodriguez/Development/luna/cmake-build-debug/examples/conv2d/CMakeFiles/conv2d-example.dir
+/Users/brodriguez/Development/luna/cmake-build-debug/examples/conv2d/CMakeFiles/edit_cache.dir
+/Users/brodriguez/Development/luna/cmake-build-debug/examples/conv2d/CMakeFiles/rebuild_cache.dir
+/Users/brodriguez/Development/luna/cmake-build-debug/examples/sgemm/CMakeFiles/sgemm-example.dir
+/Users/brodriguez/Development/luna/cmake-build-debug/examples/sgemm/CMakeFiles/edit_cache.dir
+/Users/brodriguez/Development/luna/cmake-build-debug/examples/sgemm/CMakeFiles/rebuild_cache.dir
