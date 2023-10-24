@@ -1,7 +1,7 @@
 //
 // Created by Brian Rodriguez on 7/27/23.
 //
-#include "luna/functional/conv2d.h"
+#include "luna_cpu/functional/conv2d.h"
 
 namespace luna::functional {
 void conv_2d(const float *input,

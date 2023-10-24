@@ -15,23 +15,24 @@ option(BUILD_AVX "Build AVX library version" OFF)
 
 # ---- Packages ----
 find_package(fmt REQUIRED)
-find_package(spdlog REQUIRED)
+#find_package(spdlog REQUIRED)
+
+#set(PACKAGES fmt::fmt spdlog::spdlog)
+set(PACKAGES fmt::fmt)
 
 # ---- Luna AVX Build  ----
 if(BUILD_AVX)
-    add_definitions(-DENABLE_AVX)
-
     file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/luna_avx/*.cpp)
     file(GLOB_RECURSE HDR_FILES ${PROJECT_SOURCE_DIR}/include/luna_avx/*.h)
 
     add_library(luna_avx SHARED ${SRC_FILES} ${HDR_FILES})
 
     target_compile_options(luna_avx PUBLIC -Wall -std=c++17 -O3 -mavx2 -mavx -march=native)
-    target_link_libraries(luna_avx PRIVATE fmt::fmt spdlog::spdlog)
+    target_link_libraries(luna_avx PRIVATE ${PACKAGES})
     target_include_directories(
             luna_avx
             PUBLIC
-            "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/luna_avx>"
+            "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
     )
 endif()
 
@@ -53,7 +54,7 @@ if(ENABLE_CUDA)
 
     cuda_add_library(luna_cuda SHARED ${SRC_FILES} ${HDR_FILES} ${CUDA_SRC_FILES} ${CUDA_HDR_FILES})
     set_property(TARGET luna_cuda PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH})
-    target_link_libraries(luna_cuda PRIVATE fmt::fmt spdlog::spdlog)
+    target_link_libraries(luna_cuda PRIVATE ${PACKAGES})
     target_include_directories(
             luna_cuda
             PUBLIC
@@ -66,12 +67,12 @@ file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/luna_cpu/*.cpp)
 file(GLOB_RECURSE HDR_FILES ${PROJECT_SOURCE_DIR}/include/luna_cpu/*.h)
 
 add_library(luna_cpu SHARED ${SRC_FILES} ${HDR_FILES})
-target_link_libraries(luna_cpu PRIVATE fmt::fmt spdlog::spdlog)
+target_link_libraries(luna_cpu PRIVATE ${PACKAGES})
 target_include_directories(
         luna_cpu
         PUBLIC
-        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/luna_cpu>"
+        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
 )
-target_compile_options(luna_cpu PUBLIC -Wall -std=c++17 -O3)
+target_compile_options(luna_cpu PUBLIC -Wall -std=c++17 -O3 -ffast-math)
 
 add_subdirectory(examples)

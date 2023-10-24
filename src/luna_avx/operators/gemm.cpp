@@ -5,7 +5,8 @@
 #include "luna_avx/operators/gemm.h"
 
 #include <immintrin.h>
-namespace luna::operators {
+
+namespace luna::operators::avx {
 void sgemm(const __m256 *__restrict__ a, const float alpha,
            const __m256 *__restrict__ b, const float beta, __m256 *c, size_t M,
            size_t N, size_t K) {
@@ -19,18 +20,18 @@ void sgemm(const __m256 *__restrict__ a, const float alpha,
 
   for (size_t m = 0; m < Ms; ++m) {
     for (size_t n = 0; n < Ns; ++n) {
+      __m256 dot_product_v = _mm256_setzero_ps();
       for (size_t k = 0; k < Ks; ++k) {
         __m256 a_v = a[m * K + k];
         __m256 b_v = b[n * K + k];
-        __m256 &c_v = c[n * M + m];
+        __m256 c_v = c[n * M + m];
         __m256 x = _mm256_mul_ps(a_v, b_v);
         __m256 y = _mm256_mul_ps(c_v, beta_256);
         __m256 z = _mm256_fmadd_ps(x, alpha_256, y);
-        dot_product += dot_product_v[0];
+        dot_product_v = _mm256_add_ps(dot_product_v, z);
       }
-      float &c_v = c[n * M + m];
-      c_v = alpha * dot_product + beta * c_v;
+      c[n * M + m] = dot_product_v;
     }
   }
 }
-} // namespace luna_cpu::operators
+} // namespace luna::operators::avx

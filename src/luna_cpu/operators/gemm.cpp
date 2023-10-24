@@ -3,7 +3,7 @@
 //
 #include "luna_cpu/operators/gemm.h"
 
-namespace luna_cpu::operators {
+namespace luna_cpu::operators::cpu {
 void sgemm(const float * __restrict__ a, const float alpha,
           const float * __restrict__ b, const float beta,
           float *c, size_t M, size_t N, size_t K) {
@@ -13,8 +13,8 @@ void sgemm(const float * __restrict__ a, const float alpha,
       for (size_t k = 0; k < K; ++k) {
         dot_product += a[m * K + k] * b[n * K + k];
       }
-      float &c_v = c[n * M + m];
-      c_v = alpha * dot_product + beta * c_v;
+      float c_v = c[n * M + m];
+      c[n * M + m] = alpha * dot_product + beta * c_v;
     }
   }
 }
