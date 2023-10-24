@@ -33,3 +33,5 @@
 
 # cmake
 cmake-build-*/
+
+.idea/
