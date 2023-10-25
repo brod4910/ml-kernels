@@ -21,7 +21,7 @@ find_package(fmt REQUIRED)
 set(PACKAGES fmt::fmt)
 
 # ---- Luna AVX Build  ----
-if(BUILD_AVX)
+if(${BUILD_AVX})
     file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/luna_avx/*.cpp)
     file(GLOB_RECURSE HDR_FILES ${PROJECT_SOURCE_DIR}/include/luna_avx/*.h)
 
@@ -38,7 +38,7 @@ endif()
 
 # ---- Luna CUDA Build  ----
 
-if(ENABLE_CUDA)
+if(${BUILD_CUDA})
     option(CUDA_ARCH "CUDA architecture" "61")
     # Find CUDA package and include directories
     find_package(CUDA REQUIRED)

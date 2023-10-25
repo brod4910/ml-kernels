@@ -3,7 +3,7 @@
 //
 #include "luna_cpu/operators/gemm.h"
 
-namespace luna_cpu::operators::cpu {
+namespace luna::operators::cpu {
 void sgemm(const float * __restrict__ a, const float alpha,
           const float * __restrict__ b, const float beta,
           float *c, size_t M, size_t N, size_t K) {
