@@ -4,9 +4,9 @@
 #include "luna_cpu/operators/gemm.h"
 
 namespace luna::operators::cpu {
-void sgemm(const float * __restrict__ a, const float alpha,
-          const float * __restrict__ b, const float beta,
-          float *c, size_t M, size_t N, size_t K) {
+void sgemm(const float *__restrict__ a, const float alpha,
+           const float *__restrict__ b, const float beta,
+           float *c, size_t M, size_t N, size_t K) {
   for (size_t m = 0; m < M; ++m) {
     for (size_t n = 0; n < N; ++n) {
       float dot_product = 0.0;
@@ -18,4 +18,4 @@ void sgemm(const float * __restrict__ a, const float alpha,
     }
   }
 }
-}
+}// namespace luna::operators::cpu

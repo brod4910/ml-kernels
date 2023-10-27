@@ -121,6 +121,6 @@ void conv_2d(const float *input,
              int dilation_height,
              int dilation_width,
              int groups);
-}// namespace luna_cpu::functional
+}// namespace luna::functional
 
 #endif// LUNA_CONV2D_H

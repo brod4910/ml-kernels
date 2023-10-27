@@ -78,4 +78,4 @@ void conv_2d_simple(const float *input, const float *kernel, float *output,
     }
   }
 }
-}
+}// namespace luna::functional
