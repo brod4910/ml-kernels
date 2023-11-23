@@ -85,15 +85,37 @@ void transpose_8x8(const float* a, size_t i, float* b, size_t j) {
   __m256 row_7 = _mm256_load_ps(a + 56);
 
   __m256 r0_r1_lo = _mm256_unpacklo_ps(row_0, row_1);
+  __m256 r0_r1_hi = _mm256_unpackhi_ps(row_0, row_1);
   __m256 r2_r3_lo = _mm256_unpacklo_ps(row_2, row_3);
-  auto shf_r0_r3 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0b01001101);
-  auto blend_r0_r3 = _mm256_blend_ps(r0_r1_lo, shf_r0_r3, 0b11001100);
+  __m256 r2_r3_hi = _mm256_unpackhi_ps(row_2, row_3);
   __m256 r4_r5_lo = _mm256_unpacklo_ps(row_4, row_5);
+  __m256 r4_r5_hi = _mm256_unpackhi_ps(row_4, row_5);
   __m256 r6_r7_lo = _mm256_unpacklo_ps(row_6, row_7);
-  auto shf_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, r6_r7_lo, 0b01001101);
+  __m256 r6_r7_hi = _mm256_unpackhi_ps(row_6, row_7);
+
+  auto shf_r0_r3 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0b01001110);
+  auto blend_r0_r3 = _mm256_blend_ps(r0_r1_lo, shf_r0_r3, 0b11001100);
+  auto shf_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, r6_r7_lo, 0b01001110);
   auto blend_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, shf_r4_r7, 0b11001100);
-  auto t1 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
+  auto t0 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
   auto t4 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00110001);
+  _mm256_store_ps(b, t0);
+  _mm256_store_ps(b + 32, t4);
+
+  shf_r0_r3 = _mm256_shuffle_ps(r0_r1_hi, r2_r3_hi, 0b01001110);
+  blend_r0_r3 = _mm256_blend_ps(r0_r1_hi, shf_r0_r3, 0b11001100);
+  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_hi, r6_r7_hi, 0b01001110);
+  blend_r4_r7 = _mm256_blend_ps(r4_r5_hi, shf_r4_r7, 0b11001100);
+  auto t1 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
+  auto t5 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00110001);
+
+  shf_r0_r3 = _mm256_shuffle_ps(r2_r3_lo, r, 0b01001110);
+  blend_r0_r3 = _mm256_blend_ps(r0_r1_hi, shf_r0_r3, 0b11001100);
+  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_hi, r6_r7_hi, 0b01001110);
+  blend_r4_r7 = _mm256_blend_ps(r4_r5_hi, shf_r4_r7, 0b11001100);
+  auto t1 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
+  auto t5 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00110001);
+
 }
 
 void transpose(const float *__restrict__ a, float * __restrict__ b, size_t M, size_t N) {

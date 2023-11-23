@@ -45,16 +45,16 @@ void sgemm_avx(size_t M, size_t N, size_t K, float alpha, float beta) {
 
   __m256 r0_r1_lo = _mm256_unpacklo_ps(row_0, row_1);
   __m256 r2_r3_lo = _mm256_unpacklo_ps(row_2, row_3);
-  auto shf_r0_r3 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0b01001101);
-  auto blend_r0_r3 = _mm256_blend_ps(r0_r1_lo, shf_r0_r3, 0b11001100);
   __m256 r4_r5_lo = _mm256_unpacklo_ps(row_4, row_5);
   __m256 r6_r7_lo = _mm256_unpacklo_ps(row_6, row_7);
-  auto shf_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, r6_r7_lo, 0b01001101);
-  auto blend_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, shf_r4_r7, 0b11001100);
-  auto t1 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
+  auto shf_r0_r3 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0b01001110);
+  auto blend_r0_r3 = _mm256_blend_ps(r0_r1_lo, shf_r0_r3, 0b11001100);
+  auto shf_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, r6_r7_lo, 0b01001110);
+  auto blend_r4_r7 = _mm256_blend_ps(r4_r5_lo, shf_r4_r7, 0b11001100);
+  auto t0 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
   auto t4 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00110001);
 
-  print_matrix(reinterpret_cast<float*>(&t1), 1, 8);
+  print_matrix(reinterpret_cast<float*>(&t0), 1, 8);
   print_matrix(reinterpret_cast<float*>(&t4), 1, 8);
 
   __m256 r0_r1_hi = _mm256_unpackhi_ps(row_0, row_1);
@@ -62,6 +62,14 @@ void sgemm_avx(size_t M, size_t N, size_t K, float alpha, float beta) {
   __m256 r4_r5_hi = _mm256_unpackhi_ps(row_4, row_5);
   __m256 r6_r7_hi = _mm256_unpackhi_ps(row_6, row_7);
 
+  shf_r0_r3 = _mm256_shuffle_ps(r0_r1_hi, r2_r3_hi, 0b01001110);
+  blend_r0_r3 = _mm256_blend_ps(r0_r1_hi, shf_r0_r3, 0b11001100);
+  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_hi, r6_r7_hi, 0b01001110);
+  blend_r4_r7 = _mm256_blend_ps(r4_r5_hi, shf_r4_r7, 0b11001100);
+  auto t1 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
+  auto t5 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00110001);
+  print_matrix(reinterpret_cast<float*>(&t1), 1, 8);
+  print_matrix(reinterpret_cast<float*>(&t5), 1, 8);
 //  auto r0 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0x4E);
 //  std::cout << "Shuffle r0-lo & r2-lo: ";
 //  print_matrix(reinterpret_cast<float*>(&r0), 1, 8);
