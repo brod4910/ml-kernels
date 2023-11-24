@@ -47,29 +47,74 @@ void sgemm_avx(size_t M, size_t N, size_t K, float alpha, float beta) {
   __m256 r2_r3_lo = _mm256_unpacklo_ps(row_2, row_3);
   __m256 r4_r5_lo = _mm256_unpacklo_ps(row_4, row_5);
   __m256 r6_r7_lo = _mm256_unpacklo_ps(row_6, row_7);
-  auto shf_r0_r3 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0b01001110);
-  auto blend_r0_r3 = _mm256_blend_ps(r0_r1_lo, shf_r0_r3, 0b11001100);
-  auto shf_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, r6_r7_lo, 0b01001110);
-  auto blend_r4_r7 = _mm256_blend_ps(r4_r5_lo, shf_r4_r7, 0b11001100);
-  auto t0 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
-  auto t4 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00110001);
-
-  print_matrix(reinterpret_cast<float*>(&t0), 1, 8);
-  print_matrix(reinterpret_cast<float*>(&t4), 1, 8);
-
   __m256 r0_r1_hi = _mm256_unpackhi_ps(row_0, row_1);
   __m256 r2_r3_hi = _mm256_unpackhi_ps(row_2, row_3);
   __m256 r4_r5_hi = _mm256_unpackhi_ps(row_4, row_5);
   __m256 r6_r7_hi = _mm256_unpackhi_ps(row_6, row_7);
 
-  shf_r0_r3 = _mm256_shuffle_ps(r0_r1_hi, r2_r3_hi, 0b01001110);
-  blend_r0_r3 = _mm256_blend_ps(r0_r1_hi, shf_r0_r3, 0b11001100);
-  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_hi, r6_r7_hi, 0b01001110);
-  blend_r4_r7 = _mm256_blend_ps(r4_r5_hi, shf_r4_r7, 0b11001100);
-  auto t1 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
-  auto t5 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00110001);
+  auto shf_r0_r3 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0b01000100);
+  auto shf_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, r6_r7_lo, 0b01000100);
+
+  auto t0 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00100000);
+  auto t4 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00110001);
+
+  shf_r0_r3 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0b11101110);
+  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, r6_r7_lo, 0b11101110);
+
+  auto t1 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00100000);
+  auto t5 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00110001);
+
+  shf_r0_r3 = _mm256_shuffle_ps(r0_r1_hi, r2_r3_hi, 0b01000100);
+  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_hi, r6_r7_hi, 0b01000100);
+
+  auto t2 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00100000);
+  auto t6 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00110001);
+
+  shf_r0_r3 = _mm256_shuffle_ps(r0_r1_hi, r2_r3_hi, 0b11101110);
+  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_hi, r6_r7_hi, 0b11101110);
+
+  auto t3 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00100000);
+  auto t7 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00110001);
+
+  print_matrix(reinterpret_cast<float*>(&t0), 1, 8);
   print_matrix(reinterpret_cast<float*>(&t1), 1, 8);
+  print_matrix(reinterpret_cast<float*>(&t2), 1, 8);
+  print_matrix(reinterpret_cast<float*>(&t3), 1, 8);
+  print_matrix(reinterpret_cast<float*>(&t4), 1, 8);
   print_matrix(reinterpret_cast<float*>(&t5), 1, 8);
+  print_matrix(reinterpret_cast<float*>(&t6), 1, 8);
+  print_matrix(reinterpret_cast<float*>(&t7), 1, 8);
+
+//  auto shf_r0_r3 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0b01001110);
+//  auto blend_r0_r3 = _mm256_blend_ps(r0_r1_lo, shf_r0_r3, 0b11001100);
+//  auto shf_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, r6_r7_lo, 0b01001110);
+//  auto blend_r4_r7 = _mm256_blend_ps(r4_r5_lo, shf_r4_r7, 0b11001100);
+//  auto t0 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
+//  auto t4 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00110001);
+//
+//  // [ 0  8  1  9  4  12 5  13 ]
+//  // [ 16 24 17 25 20 28 21 29 ]
+//  shf_r0_r3 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0b11101110);
+//  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, r6_r7_lo, 0b11101110);
+//  print_matrix(reinterpret_cast<float*>(&shf_r0_r3), 1, 8);
+//  print_matrix(reinterpret_cast<float*>(&shf_r4_r7), 1, 8);
+//  shf_r0_r3 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0b01000100);
+//  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, r6_r7_lo, 0b01000100);
+//  print_matrix(reinterpret_cast<float*>(&shf_r0_r3), 1, 8);
+//  print_matrix(reinterpret_cast<float*>(&shf_r4_r7), 1, 8);
+////  auto t1 = _mm256_blend_ps(shf_r0_r3, shf_r4_r7, );
+//  print_matrix(reinterpret_cast<float*>(&t0), 1, 8);
+//  print_matrix(reinterpret_cast<float*>(&t4), 1, 8);
+//
+//
+//  shf_r0_r3 = _mm256_shuffle_ps(r0_r1_hi, r2_r3_hi, 0b01001110);
+//  blend_r0_r3 = _mm256_blend_ps(r0_r1_hi, shf_r0_r3, 0b11001100);
+//  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_hi, r6_r7_hi, 0b01001110);
+//  blend_r4_r7 = _mm256_blend_ps(r4_r5_hi, shf_r4_r7, 0b11001100);
+//  auto t1 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
+//  auto t5 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00110001);
+//  print_matrix(reinterpret_cast<float*>(&t1), 1, 8);
+//  print_matrix(reinterpret_cast<float*>(&t5), 1, 8);
 //  auto r0 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0x4E);
 //  std::cout << "Shuffle r0-lo & r2-lo: ";
 //  print_matrix(reinterpret_cast<float*>(&r0), 1, 8);

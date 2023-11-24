@@ -73,6 +73,61 @@
  * [ 7 15 23 31 39 47 55 63] t7
  */
 
+void transpose_8x8_shuffle(const float* a, size_t i, float* b, size_t j) {
+  __m256 row_0 = _mm256_load_ps(a);
+  __m256 row_1 = _mm256_load_ps(a + 8);
+  __m256 row_2 = _mm256_load_ps(a + 16);
+  __m256 row_3 = _mm256_load_ps(a + 24);
+  __m256 row_4 = _mm256_load_ps(a + 32);
+  __m256 row_5 = _mm256_load_ps(a + 40);
+  __m256 row_6 = _mm256_load_ps(a + 48);
+  __m256 row_7 = _mm256_load_ps(a + 56);
+
+  __m256 r0_r1_lo = _mm256_unpacklo_ps(row_0, row_1);
+  __m256 r0_r1_hi = _mm256_unpackhi_ps(row_0, row_1);
+  __m256 r2_r3_lo = _mm256_unpacklo_ps(row_2, row_3);
+  __m256 r2_r3_hi = _mm256_unpackhi_ps(row_2, row_3);
+  __m256 r4_r5_lo = _mm256_unpacklo_ps(row_4, row_5);
+  __m256 r4_r5_hi = _mm256_unpackhi_ps(row_4, row_5);
+  __m256 r6_r7_lo = _mm256_unpacklo_ps(row_6, row_7);
+  __m256 r6_r7_hi = _mm256_unpackhi_ps(row_6, row_7);
+
+  auto shf_r0_r3 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0b01000100);
+  auto shf_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, r6_r7_lo, 0b01000100);
+
+  auto t0 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00100000);
+  auto t4 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00110001);
+
+  _mm256_store_ps(b + j, t0);
+  _mm256_store_ps(b + j + 32, t4);
+
+  shf_r0_r3 = _mm256_shuffle_ps(r0_r1_lo, r2_r3_lo, 0b11101110);
+  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_lo, r6_r7_lo, 0b11101110);
+
+  auto t1 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00100000);
+  auto t5 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00110001);
+
+  _mm256_store_ps(b + j + 8, t1);
+  _mm256_store_ps(b + j + 40, t5);
+
+  shf_r0_r3 = _mm256_shuffle_ps(r0_r1_hi, r2_r3_hi, 0b01000100);
+  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_hi, r6_r7_hi, 0b01000100);
+
+  auto t2 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00100000);
+  auto t6 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00110001);
+
+  _mm256_store_ps(b + j + 16, t2);
+  _mm256_store_ps(b + j + 48, t6);
+
+  shf_r0_r3 = _mm256_shuffle_ps(r0_r1_hi, r2_r3_hi, 0b11101110);
+  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_hi, r6_r7_hi, 0b11101110);
+
+  auto t3 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00100000);
+  auto t7 = _mm256_permute2f128_ps(shf_r0_r3, shf_r4_r7, 0b00110001);
+
+  _mm256_store_ps(b + j + 24, t3);
+  _mm256_store_ps(b + j + 56, t7);
+}
 
 void transpose_8x8(const float* a, size_t i, float* b, size_t j) {
   __m256 row_0 = _mm256_load_ps(a);
@@ -109,12 +164,12 @@ void transpose_8x8(const float* a, size_t i, float* b, size_t j) {
   auto t1 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
   auto t5 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00110001);
 
-  shf_r0_r3 = _mm256_shuffle_ps(r2_r3_lo, r, 0b01001110);
-  blend_r0_r3 = _mm256_blend_ps(r0_r1_hi, shf_r0_r3, 0b11001100);
-  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_hi, r6_r7_hi, 0b01001110);
-  blend_r4_r7 = _mm256_blend_ps(r4_r5_hi, shf_r4_r7, 0b11001100);
-  auto t1 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
-  auto t5 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00110001);
+//  shf_r0_r3 = _mm256_shuffle_ps(r2_r3_lo, r2_r3_hi, 0b01001110);
+//  blend_r0_r3 = _mm256_blend_ps(r0_r1_hi, shf_r0_r3, 0b11001100);
+//  shf_r4_r7 = _mm256_shuffle_ps(r4_r5_hi, r6_r7_hi, 0b01001110);
+//  blend_r4_r7 = _mm256_blend_ps(r4_r5_hi, shf_r4_r7, 0b11001100);
+//  auto t1 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00100000);
+//  auto t5 = _mm256_permute2f128_ps(blend_r0_r3, blend_r4_r7, 0b00110001);
 
 }
 
