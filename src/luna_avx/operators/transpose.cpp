@@ -67,10 +67,10 @@ void transpose(const float *__restrict__ a, float *__restrict__ b, size_t M, siz
 
   for (size_t m = 0; m < M; m += kBlockSize) {
     for (size_t n = 0; n < N; n += kBlockSize) {
-      for (size_t bs = 0; bs < kBlockSize; bs += 8) {
-        size_t mm = m * N + n + bs;
-        size_t nn = (n + bs) * M + m;
-        transpose_8x8(&a[m * N + n + bs], &b[(n + bs) * M + m], M, N);
+      for (size_t bm = 0; bm < kBlockSize; bm += 8) {
+        for (size_t bn = 0; bn < kBlockSize; bn += 8) {
+          transpose_8x8(&a[(m + bm) * N + n + bn], &b[(n + bn) * M + m + bm], M, N);
+        }
       }
     }
   }
