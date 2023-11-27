@@ -33,6 +33,6 @@ void sgemm_cpu(size_t M, size_t N, size_t K, float alpha, float beta) {
 
   luna::operators::cpu::sgemm(a, alpha, b, beta, c, M, N, K);
 
-  print_matrix_cpu(c, M, N);
+//  print_matrix_cpu(c, M, N);
   delete[] a, delete[] b, delete[] c;
 }

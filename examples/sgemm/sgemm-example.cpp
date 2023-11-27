@@ -11,9 +11,9 @@
 #include "sgemm_cpu.h"
 
 int main() {
-    size_t M = 32;
-    size_t N = 32;
-    size_t K = 32;
+    size_t M = 64;
+    size_t N = 64;
+    size_t K = 64;
     float alpha = 1.0;
     float beta = 0.0;
 

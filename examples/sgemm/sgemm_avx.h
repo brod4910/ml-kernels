@@ -7,7 +7,7 @@
 #include <iostream>
 #include <immintrin.h>
 
-#include <luna_avx/operators/transpose.h>
+#include <luna_avx/operators.h>
 
 void initialize_matrix(float *matrix, size_t size, float value, int skip = 1) {
   for (size_t i = 0; i < size; i += skip) {
@@ -31,13 +31,18 @@ void print_matrix(const float *matrix, size_t M, size_t N) {
 }
 
 void sgemm_avx(size_t M, size_t N, size_t K, float alpha, float beta) {
-  auto *a = static_cast<float *>(_mm_malloc(M * N * sizeof(float), 32));
-  auto *b = static_cast<float *>(_mm_malloc(N * M * sizeof(float), 32));
-  arange_matrix(a, M * N);
-  initialize_matrix(b, N * M, 0);
-  luna::operators::avx::transpose(a, b, M, N);
-  print_matrix(b, M, N);
+  auto *a = static_cast<float *>(_mm_malloc(M * K * sizeof(float), 32));
+  auto *b = static_cast<float *>(_mm_malloc(N * K * sizeof(float), 32));
+  auto *b_T = static_cast<float *>(_mm_malloc(N * K * sizeof(float), 32));
+  auto *c = static_cast<float *>(_mm_malloc(M * N * sizeof(float), 32));
+
+  arange_matrix(a, M * K);
+  initialize_matrix(b, N * K, 0);
+  luna::operators::avx::transpose(b, b_T, M, N);
+  luna::operators::avx::sgemm(a, alpha, b_T, beta, c, M, N, K);
+
   _mm_free(a);
   _mm_free(b);
-//  _mm_free(c);
+  _mm_free(b_T);
+  _mm_free(c);
 }
