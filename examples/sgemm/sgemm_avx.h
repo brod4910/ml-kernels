@@ -40,7 +40,7 @@ void sgemm_avx(size_t M, size_t N, size_t K, float alpha, float beta) {
   initialize_matrix(b, N * K, 0);
   luna::operators::avx::transpose(b, b_T, M, N);
   luna::operators::avx::sgemm(a, alpha, b_T, beta, c, M, N, K);
-
+  print_matrix(c, M, N);
   _mm_free(a);
   _mm_free(b);
   _mm_free(b_T);
