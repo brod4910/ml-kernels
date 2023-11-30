@@ -36,8 +36,8 @@ void sgemm_avx(size_t M, size_t N, size_t K, float alpha, float beta) {
   auto *b_T = static_cast<float *>(_mm_malloc(N * K * sizeof(float), 32));
   auto *c = static_cast<float *>(_mm_malloc(M * N * sizeof(float), 32));
 
-  arange_matrix(a, M * K);
-  initialize_matrix(b, N * K, 0);
+  initialize_matrix(a, M * K, 1);
+  initialize_matrix(b, N * K, 2);
   luna::operators::avx::transpose(b, b_T, M, N);
   luna::operators::avx::sgemm(a, alpha, b_T, beta, c, M, N, K);
   print_matrix(c, M, N);

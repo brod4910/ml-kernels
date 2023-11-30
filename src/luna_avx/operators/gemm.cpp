@@ -5,8 +5,47 @@
 #include "luna_avx/operators/gemm.h"
 
 namespace luna::operators::avx {
-void inline sgemm(const float *__restrict__ a, const float alpha,
-           const float *__restrict__ b, const float beta, float *c,
+float inline reduce_gemm(__m256 &vec) {
+  __m128 lo = _mm256_castps256_ps128(vec);
+  __m128 hi = _mm256_extractf128_ps(vec, 1);
+  lo = _mm_add_ps(lo, hi);
+  __m128 shuffle = _mm_movehdup_ps(lo);
+  __m128 sum = _mm_add_ps(lo, shuffle);
+  shuffle = _mm_movehl_ps(shuffle, sum);
+  sum = _mm_add_ss(sum, shuffle);
+  return _mm_cvtss_f32(sum);
+}
+
+void inline sgemm_4x8(const float *__restrict__ a, const float alpha,
+               const float *__restrict__ b, const float beta, float *__restrict__ c,
+               size_t M, size_t N, size_t K) {
+  __m256 b0 = _mm256_load_ps(b);
+  __m256 b1 = _mm256_load_ps(&b[K * 2]);
+  __m256 b2 = _mm256_load_ps(&b[K * 3]);
+  __m256 b3 = _mm256_load_ps(&b[K * 4]);
+
+
+  for (int i = 0; i < 4; ++i) {
+    __m256 av = _mm256_load_ps(&a[M * i]);
+    __m256 c0 = _mm256_set1_ps(0.0);
+    __m256 c1 = _mm256_set1_ps(0.0);
+    __m256 c2 = _mm256_set1_ps(0.0);
+    __m256 c3 = _mm256_set1_ps(0.0);
+
+    c0 = _mm256_add_ps(c0, _mm256_mul_ps(av, b0));
+    c1 = _mm256_add_ps(c1, _mm256_mul_ps(av, b1));
+    c2 = _mm256_add_ps(c2, _mm256_mul_ps(av, b2));
+    c3 = _mm256_add_ps(c3, _mm256_mul_ps(av, b3));
+
+    c[(M * i) + 0] = reduce_gemm(c0);
+    c[(M * i) + 1] = reduce_gemm(c1);
+    c[(M * i) + 2] = reduce_gemm(c2);
+    c[(M * i) + 3] = reduce_gemm(c3);
+  }
+}
+
+void sgemm(const float *__restrict__ a, const float alpha,
+           const float *__restrict__ b, const float beta, float *__restrict__ c,
            size_t M, size_t N, size_t K) {
 
   constexpr size_t kBlockSize = 16;
@@ -16,25 +55,14 @@ void inline sgemm(const float *__restrict__ a, const float alpha,
       for (size_t k = 0; k < K; k += kBlockSize) {
         for (size_t ms = 0; ms < kBlockSize; ms += 8) {
           for (size_t ns = 0; ns < kBlockSize; ns += 8) {
-
-            __m256 m_v = _mm256_load_ps(&a[(m + ms) * K + k]);
-            __m256 n_v = _mm256_load_ps(&b[(n + ns) * K + k]);
-            __m256 c_v = _mm256_add_ps(_mm256_set1_ps(0.0), _mm256_mul_ps(m_v, n_v));
-            // Probably don't need this loop since we can just manually unroll it
-            // if our block size is small.
-            for (size_t ks = 8; ks < kBlockSize; ks += 8) {
-              m_v = _mm256_load_ps(&a[(m + ms) * K + (k + ks)]);
-              n_v = _mm256_load_ps(&b[(n + ns) * K + (k + ks)]);
-              c_v = _mm256_add_ps(c_v, _mm256_mul_ps(m_v, n_v));
+            for (size_t ks = 0; ks < kBlockSize; ks += 4) {
+              sgemm_4x8(&a[(m + ms) * K + k],
+                        alpha,
+                        &b[(n + ns) * K + k],
+                        beta,
+                        &c[(m + ms) * N + (n + ns)],
+                        M, N, K);
             }
-            __m128 lo = _mm256_castps256_ps128(c_v);
-            __m128 hi = _mm256_extractf128_ps(c_v, 1);
-            lo = _mm_add_ps(lo, hi);
-            __m128 shuffle = _mm_movehdup_ps(lo);
-            __m128 sum = _mm_add_ps(lo, shuffle);
-            shuffle = _mm_movehl_ps(shuffle, sum);
-            sum = _mm_add_ss(sum, shuffle);
-            c[(m + ms) * N + (n + ns)] = _mm_cvtss_f32(sum);
           }
         }
       }

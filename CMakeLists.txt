@@ -27,7 +27,7 @@ if(${BUILD_AVX})
 
     add_library(luna_avx SHARED ${SRC_FILES} ${HDR_FILES})
 
-    target_compile_options(luna_avx PUBLIC -Wall -std=c++17 -O3 -mavx2 -mavx -march=native)
+    target_compile_options(luna_avx PUBLIC -Wall -std=c++17 -O0 -mavx2 -mavx -march=native)
     target_link_libraries(luna_avx PRIVATE ${PACKAGES})
     target_include_directories(
             luna_avx

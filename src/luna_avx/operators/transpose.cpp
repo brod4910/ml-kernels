@@ -62,7 +62,7 @@ void inline transpose_8x8(const float *a, float *b, size_t M, size_t N) {
   _mm256_store_ps(&b[N * 7], t7);
 }
 
-void inline transpose(const float *__restrict__ a, float *__restrict__ b, size_t M, size_t N) {
+void transpose(const float *__restrict__ a, float *__restrict__ b, size_t M, size_t N) {
   constexpr size_t kBlockSize = 16;
 
   for (size_t m = 0; m < M; m += kBlockSize) {
