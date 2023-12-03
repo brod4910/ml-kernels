@@ -6,9 +6,14 @@
 
 namespace luna::operators::avx {
 void inline sgemm_8x8(const float *__restrict__ a,
+                      const float alpha,
                       const float *__restrict__ b,
+                      const float beta,
                       float *__restrict__ c,
                       size_t M, size_t N, size_t K) {
+  __m256 alpha_v = _mm256_set1_ps(alpha);
+  __m256 beta_v = _mm256_set1_ps(beta);
+
   __m256 b0 = _mm256_load_ps(b);
   __m256 b1 = _mm256_load_ps(&b[K]);
   __m256 b2 = _mm256_load_ps(&b[K * 2]);
@@ -31,6 +36,7 @@ void inline sgemm_8x8(const float *__restrict__ a,
     v = _mm256_add_ps(v, _mm256_mul_ps(av, b6));
     v = _mm256_add_ps(v, _mm256_mul_ps(av, b7));
 
+    v = _mm256_add_ps(_mm256_mul_ps(alpha_v, v), _mm256_mul_ps(cv, beta_v));
     _mm256_store_ps(&c[M * i], v);
   }
 }
@@ -49,7 +55,9 @@ void sgemm(const float *__restrict__ a, const float alpha,
             for (size_t bn = 0; bn < kBlockSize; bn += 8) {
               sgemm_8x8(
                 &a[(m + bm) * K + (k + bk)],
+                alpha,
                 &b[(k + bk) * N + (n + bn)],
+                beta,
                 &c[(m + bm) * N + (n + bn)],
                 M, N, K);
             }
