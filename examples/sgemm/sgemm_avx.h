@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <iostream>
 #include <immintrin.h>
 
@@ -36,12 +37,24 @@ void sgemm_avx(size_t M, size_t N, size_t K, float alpha, float beta) {
   auto *b_T = static_cast<float *>(_mm_malloc(N * K * sizeof(float), 32));
   auto *c = static_cast<float *>(_mm_malloc(M * N * sizeof(float), 32));
 
-  initialize_matrix(a, M * K, 1);
-  initialize_matrix(b, N * K, 2);
-  initialize_matrix(c, M * N, 0);
-  luna::operators::avx::transpose(b, b_T, M, N);
-  luna::operators::avx::sgemm(a, alpha, b_T, beta, c, M, N, K);
-  print_matrix(c, M, N);
+  const int num_runs = 100;
+  long long total_duration = 0;
+
+  for (int i = 0; i < num_runs; ++i) {
+    initialize_matrix(a, M * K, 1);
+    initialize_matrix(b, N * K, 2);
+    initialize_matrix(c, M * N, 0);
+
+    auto start = std::chrono::high_resolution_clock::now();
+    luna::operators::avx::transpose(b, b_T, M, N);
+    luna::operators::avx::sgemm(a, alpha, b_T, beta, c, M, N, K);
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    total_duration += duration.count();
+  }
+  long long average_duration = total_duration / num_runs;
+  std::cout << "Average time taken by function AVX GEMM: " << average_duration << " milliseconds" << std::endl;
+
   _mm_free(a);
   _mm_free(b);
   _mm_free(b_T);
