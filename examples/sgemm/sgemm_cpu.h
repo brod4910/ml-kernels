@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "luna_cpu/operators.h"
+#include "cpu/operators.h"
 #include <memory>
 #include <iostream>
 
@@ -42,8 +42,8 @@ void sgemm_cpu(size_t M, size_t N, size_t K, float alpha, float beta) {
     initialize_matrix(c, M * N, 0);
 
     auto start = std::chrono::high_resolution_clock::now();
-    luna::operators::cpu::transpose(b, b_T, M, N);
-    luna::operators::cpu::sgemm(a, alpha, b_T, beta, c, M, N, K);
+    ml::operators::cpu::transpose(b, b_T, M, N);
+    ml::operators::cpu::sgemm(a, alpha, b_T, beta, c, M, N, K);
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     total_duration += duration.count();

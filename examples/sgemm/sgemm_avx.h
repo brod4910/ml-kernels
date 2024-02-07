@@ -8,7 +8,7 @@
 #include <iostream>
 #include <immintrin.h>
 
-#include <luna_avx/operators.h>
+#include <avx/operators.h>
 
 void initialize_matrix(float *matrix, size_t size, float value, int skip = 1) {
   for (size_t i = 0; i < size; i += skip) {
@@ -46,8 +46,8 @@ void sgemm_avx(size_t M, size_t N, size_t K, float alpha, float beta) {
     initialize_matrix(c, M * N, 0);
 
     auto start = std::chrono::high_resolution_clock::now();
-    luna::operators::avx::transpose(b, b_T, M, N);
-    luna::operators::avx::sgemm(a, alpha, b_T, beta, c, M, N, K);
+    ml::operators::avx::transpose(b, b_T, M, N);
+    ml::operators::avx::sgemm(a, alpha, b_T, beta, c, M, N, K);
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     total_duration += duration.count();

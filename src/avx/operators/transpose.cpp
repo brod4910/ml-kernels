@@ -3,9 +3,9 @@
 //
 
 #include <immintrin.h>
-#include <luna_avx/operators/transpose.h>
+#include <avx/operators/transpose.h>
 
-namespace luna::operators::avx {
+namespace ml::operators::avx {
 void inline transpose_8x8(const float *a, float *b, size_t M, size_t N) {
   __m256 row_0 = _mm256_load_ps(a);
   __m256 row_1 = _mm256_load_ps(&a[M]);

@@ -3,7 +3,7 @@
 //
 #include <luna_cpu/operators/transpose.h>
 
-namespace luna::operators::cpu {
+namespace ml::operators::cpu {
 void transpose(const float *__restrict__ a, float *__restrict__ b, size_t M, size_t N) {
   for (size_t m = 0; m < M; ++m) {
     for (size_t n = 0; n < N; ++n) {
