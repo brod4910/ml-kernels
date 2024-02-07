@@ -1,7 +1,7 @@
 //
 // Created by Brian Rodriguez on 8/26/23.
 //
-#include "luna_cpu/operators/gemm.h"
+#include "cpu/operators/gemm.h"
 
 namespace ml::operators::cpu {
 void sgemm(const float *__restrict__ a, const float alpha,

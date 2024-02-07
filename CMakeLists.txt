@@ -20,23 +20,24 @@ find_package(fmt REQUIRED)
 #set(PACKAGES fmt::fmt spdlog::spdlog)
 set(PACKAGES fmt::fmt)
 
-# ---- Luna AVX Build  ----
+# ---- AVX Build  ----
 if(${BUILD_AVX})
+    set(AVX_LIB_NAME ${PROJECT_NAME}_avx)
     file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/avx/*.cpp)
     file(GLOB_RECURSE HDR_FILES ${PROJECT_SOURCE_DIR}/include/avx/*.h)
 
-    add_library(avx SHARED ${SRC_FILES} ${HDR_FILES})
+    add_library(${AVX_LIB_NAME} SHARED ${SRC_FILES} ${HDR_FILES})
 
-    target_compile_options(avx PUBLIC -Wall -std=c++17 -O3 -mavx2 -mavx -march=native)
-    target_link_libraries(avx PRIVATE ${PACKAGES})
+    target_compile_options(${AVX_LIB_NAME} PUBLIC -Wall -std=c++17 -O3 -mavx2 -mavx -march=native)
+    target_link_libraries(${AVX_LIB_NAME} PRIVATE ${PACKAGES})
     target_include_directories(
-            avx
+            ${AVX_LIB_NAME}
             PUBLIC
             "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
     )
 endif()
 
-# ---- Luna CUDA Build  ----
+# ---- CUDA Build  ----
 
 if(${BUILD_CUDA})
     option(CUDA_ARCH "CUDA architecture" "61")
@@ -63,16 +64,17 @@ if(${BUILD_CUDA})
 endif()
 
 # ---- Luna CPU Build  ----
+set(CPU_LIB_NAME ${PROJECT_NAME}_cpu)
 file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/cpu/*.cpp)
 file(GLOB_RECURSE HDR_FILES ${PROJECT_SOURCE_DIR}/include/cpu/*.h)
 
-add_library(cpu SHARED ${SRC_FILES} ${HDR_FILES})
-target_link_libraries(luna_cpu PRIVATE ${PACKAGES})
+add_library(${CPU_LIB_NAME} SHARED ${SRC_FILES} ${HDR_FILES})
+target_link_libraries(${CPU_LIB_NAME} PRIVATE ${PACKAGES})
 target_include_directories(
-        cpu
+        ${CPU_LIB_NAME}
         PUBLIC
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
 )
-target_compile_options(cpu PUBLIC -Wall -std=c++17 -O3 -ffast-math)
+target_compile_options(${CPU_LIB_NAME} PUBLIC -Wall -std=c++17 -O3 -ffast-math)
 
 add_subdirectory(examples)

@@ -1,7 +1,7 @@
 //
 // Created by Brian Rodriguez on 12/2/23.
 //
-#include <luna_cpu/operators/transpose.h>
+#include <cpu/operators/transpose.h>
 
 namespace ml::operators::cpu {
 void transpose(const float *__restrict__ a, float *__restrict__ b, size_t M, size_t N) {
@@ -11,4 +11,4 @@ void transpose(const float *__restrict__ a, float *__restrict__ b, size_t M, siz
     }
   }
 }
-}
+}// namespace ml::operators::cpu
