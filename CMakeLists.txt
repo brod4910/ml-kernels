@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.21)
 project(
         ml_kernels
         VERSION 0.0.1
-        DESCRIPTION "A C++ ML framework named after my dog"
-        HOMEPAGE_URL "https://github.com/brod4910/luna"
+        DESCRIPTION "A collection of machine learning kernels for CPU, AVX and CUDA"
+        HOMEPAGE_URL "https://github.com/brod4910/ml-kernels"
         LANGUAGES CXX
 )
 
@@ -42,10 +42,10 @@ endif()
 if(${BUILD_CUDA})
     option(CUDA_ARCH "CUDA architecture" "61")
     # Find CUDA package and include directories
-    find_package(CUDA REQUIRED)
+    enable_language(CUDA)
 
     # Specify the CUDA compute capability
-    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_61,code=sm_61)  # Change the compute capability as needed
+    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH})  # Change the compute capability as needed
 
     # Add the CUDA sources to the project
     file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/cuda/*.cpp)
