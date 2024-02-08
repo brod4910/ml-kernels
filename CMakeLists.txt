@@ -40,6 +40,7 @@ endif()
 # ---- CUDA Build  ----
 
 if(${BUILD_CUDA})
+    set(CUDA_LIB_NAME ${PROJECT_NAME}_cuda)
     option(CUDA_ARCH "CUDA architecture" "61")
     # Find CUDA package and include directories
     enable_language(CUDA)
@@ -53,11 +54,11 @@ if(${BUILD_CUDA})
     file(GLOB_RECURSE HDR_FILES ${PROJECT_SOURCE_DIR}/include/cuda/*.h)
     file(GLOB_RECURSE CUDA_HDR_FILES ${PROJECT_SOURCE_DIR}/include/cuda/*.cuh)
 
-    cuda_add_library(cuda SHARED ${SRC_FILES} ${HDR_FILES} ${CUDA_SRC_FILES} ${CUDA_HDR_FILES})
-    set_property(TARGET cuda PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH})
-    target_link_libraries(cuda PRIVATE ${PACKAGES})
+    add_library(${CUDA_LIB_NAME} SHARED ${SRC_FILES} ${HDR_FILES} ${CUDA_SRC_FILES} ${CUDA_HDR_FILES})
+    set_property(TARGET ${CUDA_LIB_NAME} PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH})
+    target_link_libraries(${CUDA_LIB_NAME} PRIVATE ${PACKAGES})
     target_include_directories(
-            cuda
+            ${CUDA_LIB_NAME}
             PUBLIC
             "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/cuda>"
     )
