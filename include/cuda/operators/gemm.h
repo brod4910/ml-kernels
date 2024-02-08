@@ -30,14 +30,14 @@
  *  
  * ... etc.
  * 
- * Tiling:
+ * Shared Memory:
  * Assuming we have square matrices and our tile size is 16 which gives us tiles 
  * of size 16x16 = 256 elements within each tile. In order to take advantage of 
  * this technique, we need to launch a kernel that contains 
  * (M x N) // TILE_SIZE + 1 blocks with TILE_SIZE x TILE_SIZE threads.
  * 
- * dim3 gridDim((M x N) // TILE_SIZE + 1, 1);
- * dim3 blockDim(TILE_SIZE * TILE_SIZE, 1);
+ * dim3 gridDim((M x N) // TILE_SIZE + 1, (M x N) // TILE_SIZE + 1);
+ * dim3 blockDim((TILE_SIZE * TILE_SIZE) // 2, (TILE_SIZE * TILE_SIZE) // 2);
  * 
  * sgemm<<gridDim, blockDim, TILE_SIZE * TILE_SIZE>>(...);
  * 
@@ -50,9 +50,18 @@
  * 
  * float accumulator = 0.0;
  * 
- * tileM[y][x] = M[y * TILE_SIZE + ]
+ * tileM[threadIdx.y][threadIdx.x] = M[y * TILE_SIZE + threadIdx.x];
+ * tileN[threadIdx.y][threadIdx.x] = N[threadIdx.y * K + x];
+ * __syncthreads();
  * 
- *   
+ * for (int k = 0; k < TILE_SIZE; ++k) {
+ *    accumulator += tileM[threadIdx.y][k] * tileN[k][threadIdx.x];
+ * }
+ * 
+ * // can probably be optimized by adding another tile for the accumulator
+ * c[x * M + y] = alpha * accumulator + beta * c[x * M + y];
+ * 
+ * 
  */
 namespace ml::operators::cuda {
 void sgemm(const float * a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K);
