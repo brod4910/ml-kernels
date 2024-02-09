@@ -5,8 +5,8 @@
 #pragma once
 #include <cstddef>
 
-namespace luna::operators::avx {
-/*
+/* TODO: Fix Notes to match the code that uses permute and shuffles
+ *
  * Transpose AVX Notes:
  *
  * Transposed 8x8 matrix
@@ -74,7 +74,8 @@ namespace luna::operators::avx {
  * [ 6 14 22 30 38 46 54 62] t6
  * [ 7 15 23 31 39 47 55 63] t7
  */
+namespace ml::operators::avx {
 
 void transpose(const float *__restrict__ a, float * __restrict__ b, size_t M, size_t N);
 
-}// namespace luna::operators::avx
+}// namespace ml::operators::avx

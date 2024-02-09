@@ -4,7 +4,7 @@
 #include <immintrin.h>
 #include "luna_avx/operators/gemm.h"
 
-namespace luna::operators::avx {
+namespace ml::operators::avx {
 void inline sgemm_8x8(const float *__restrict__ a,
                       const float alpha,
                       const float *__restrict__ b,
@@ -67,4 +67,4 @@ void sgemm(const float *__restrict__ a, const float alpha,
     }
   }
 }
-}// namespace luna::operators::avx
+}// namespace ml::operators::avx
