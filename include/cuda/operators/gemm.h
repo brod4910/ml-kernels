@@ -62,7 +62,10 @@
  * c[x * M + y] = alpha * accumulator + beta * c[x * M + y];
  * 
  * 
+ * The above is a naive tiling implementation that doesn't really take advantage of the true
+ * power of using shared memory
  */
 namespace ml::operators::cuda {
 void sgemm(const float * a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K);
+
 } // namespace ml::operators::cuda
