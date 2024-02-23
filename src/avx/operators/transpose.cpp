@@ -3,7 +3,7 @@
 //
 
 #include <immintrin.h>
-#include <avx/operators/transpose.h>
+#include <mlkl/avx/operators/transpose.h>
 
 namespace ml::operators::avx {
 void inline transpose_8x8(const float *a, float *b, size_t M, size_t N) {

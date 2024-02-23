@@ -8,7 +8,7 @@
 #include <iostream>
 #include <immintrin.h>
 
-#include <avx/operators.h>
+#include <mlkl/avx/operators.h>
 
 void initialize_matrix(float *matrix, size_t size, float value, int skip = 1) {
   for (size_t i = 0; i < size; i += skip) {

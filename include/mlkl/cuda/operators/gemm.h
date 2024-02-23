@@ -1,6 +1,7 @@
 
 #pragma once
 #include <cstddef>
+#include <cuda_runtime.h>
 
 /*
  * The naive implementation of CUDA GEMM would be to launch an equal number of thread as there are elements 
@@ -66,6 +67,19 @@
  * power of using shared memory
  */
 namespace ml::operators::cuda {
-void sgemm(const float * a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K);
+    namespace kernel
+    {   
+        __global__ void sgemm_v1(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K);
 
+        __global__ void sgemm_v2(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K, int blk_size);
+
+    } // namespace kernel
+    
+void launch_sgemm_v1(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K, int blk_size);
+
+void launch_sgemm_v2(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K, int blk_size);
+
+void sgemm_v1(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K, int blk_size);
+
+void sgemm_v2(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K, int blk_size);
 } // namespace ml::operators::cuda
