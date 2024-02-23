@@ -103,7 +103,7 @@ void sgemm_cuda(size_t M, size_t N, size_t K, float alpha, float beta) {
 
     total_duration += time_elapsed;
   }
-  print_matrix_cuda(c_d, M, N);
+
   float average_duration = total_duration / num_runs;
   std::cout << "Average time taken by function CUDA GEMM: " << average_duration << " milliseconds" << std::endl;
 

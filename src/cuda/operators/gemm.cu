@@ -31,7 +31,7 @@ __global__ void sgemm_v2(const float *a, float alpha, const float *b, float beta
   int x = blockDim.x * blk_size + (threadIdx.x / blk_size);
   int y = blockDim.y * blk_size + (threadIdx.x % blk_size);
 
-  if (x > M || y > N) {
+  if (x > N || y > M) {
     return;
   }
 

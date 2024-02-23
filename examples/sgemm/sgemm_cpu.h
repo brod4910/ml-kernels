@@ -48,7 +48,7 @@ void sgemm_cpu(size_t M, size_t N, size_t K, float alpha, float beta) {
   }
   long long average_duration = total_duration / num_runs;
   std::cout << "Average time taken by function CPU GEMM: " << average_duration << " milliseconds" << std::endl;
+  print_matrix_cpu(c, M, N);
 
-  //  print_matrix_cpu(c, M, N);
   delete[] a, delete[] b, delete[] c;
 }
