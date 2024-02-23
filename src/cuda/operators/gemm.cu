@@ -1,8 +1,12 @@
-#include <cuda_runtime.h>
+#include <cuda_runtime_api.h>
 
 #include <mlkl/cuda/operators/gemm.h>
 
 namespace ml::operators::cuda {
+int ceil_div(int a, int b) {
+  return (a + b - 1) / b;
+}
+
 namespace kernel {
 // naive
 __global__ void sgemm_v1(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
@@ -42,14 +46,14 @@ __global__ void sgemm_v2(const float *a, float alpha, const float *b, float beta
 }// namespace kernel
 
 void launch_sgemm_v1(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K, int blk_size) {
-  dim3 grid_dim(M / blk_size, N / blk_size);
+  dim3 grid_dim(ceil_div(M, blk_size), ceil_div(N, blk_size));
   dim3 block_dim(blk_size, blk_size);
 
   kernel::sgemm_v1<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
 
 void launch_sgemm_v2(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K, int blk_size) {
-  dim3 grid_dim(M / blk_size, N / blk_size);
+  dim3 grid_dim(ceil_div(M, blk_size), ceil_div(N, blk_size));
   dim3 block_dim(blk_size * blk_size);
   kernel::sgemm_v2<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K, blk_size);
 }
