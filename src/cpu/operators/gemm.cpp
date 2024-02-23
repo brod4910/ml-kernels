@@ -1,7 +1,7 @@
 //
 // Created by Brian Rodriguez on 8/26/23.
 //
-#include "cpu/operators/gemm.h"
+#include <mlkl/cpu/operators/gemm.h>
 
 namespace ml::operators::cpu {
 void sgemm(const float *__restrict__ a, const float alpha,

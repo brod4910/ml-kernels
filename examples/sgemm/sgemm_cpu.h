@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "cpu/operators.h"
+#include "mlkl/cpu/operators.h"
 #include <chrono>
 #include <iostream>
 #include <memory>

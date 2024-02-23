@@ -1,5 +1,9 @@
 #include <cuda_runtime.h>
-namespace ml::operators::cuda::kernel {
+
+#include <mlkl/cuda/operators/gemm.h>
+
+namespace ml::operators::cuda {
+namespace kernel {
 // naive
 __global__ void sgemm_v1(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
   int x = blockDim.x * blockIdx.x + threadIdx.x;
@@ -30,10 +34,24 @@ __global__ void sgemm_v2(const float *a, float alpha, const float *b, float beta
   float accumulator = 0.0;
 
   for (int k = 0; k < K; ++k) {
-      accumulator += a[x * K + k] * b[k * N + y];
-    }
+    accumulator += a[x * K + k] * b[k * N + y];
   }
 
   c[x * N + y] = alpha * accumulator + beta * c[x * N + y];
 }
+}// namespace kernel
+
+void launch_sgemm_v1(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K, int blk_size) {
+  dim3 grid_dim(M / blk_size, N / blk_size);
+  dim3 block_dim(blk_size, blk_size);
+
+  kernel::sgemm_v1<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
+
+void launch_sgemm_v2(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K, int blk_size) {
+  dim3 grid_dim(M / blk_size, N / blk_size);
+  dim3 block_dim(blk_size * blk_size);
+  kernel::sgemm_v2<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K, blk_size);
+}
+
+}// namespace ml::operators::cuda
