@@ -1,9 +1,8 @@
 //
 // Created by Brian Rodriguez on 10/24/23.
 //
-#include "cuda_runtime_api.h"
-
 #include <chrono>
+#include <cuda_runtime_api.h>
 #include <iostream>
 #include <memory>
 #include <mlkl/cuda/operators.h>
@@ -92,7 +91,7 @@ void sgemm_cuda(size_t M, size_t N, size_t K, float alpha, float beta) {
     cudaEventRecord(start);
 
     // ml::operators::cuda::transpose(b, b_T, M, N);
-    ml::operators::cuda::launch_sgemm_v1(a_d, alpha, b_T_d, beta, c_d, M, N, K, blk_size);
+    ml::operators::cuda::launch_sgemm_v2(a_d, alpha, b_T_d, beta, c_d, M, N, K, blk_size);
     check_cuda_error(__FILE__, __LINE__);
 
     cudaEventRecord(stop);

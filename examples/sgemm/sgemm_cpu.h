@@ -40,7 +40,7 @@ void sgemm_cpu(size_t M, size_t N, size_t K, float alpha, float beta) {
     initialize_matrix_cpu(c, M * N, 0, 1);
 
     auto start = std::chrono::high_resolution_clock::now();
-    ml::operators::cpu::transpose(b, b_T, M, N);
+    // ml::operators::cpu::transpose(b, b_T, M, N);
     ml::operators::cpu::sgemm(a, alpha, b_T, beta, c, M, N, K);
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
@@ -48,7 +48,7 @@ void sgemm_cpu(size_t M, size_t N, size_t K, float alpha, float beta) {
   }
   long long average_duration = total_duration / num_runs;
   std::cout << "Average time taken by function CPU GEMM: " << average_duration << " milliseconds" << std::endl;
-  print_matrix_cpu(c, M, N);
+  // print_matrix_cpu(c, M, N);
 
   delete[] a, delete[] b, delete[] c;
 }
