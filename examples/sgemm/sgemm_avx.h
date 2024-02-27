@@ -46,7 +46,7 @@ void sgemm_avx(size_t M, size_t N, size_t K, float alpha, float beta) {
     initialize_matrix(c, M * N, 0);
 
     auto start = std::chrono::high_resolution_clock::now();
-    ml::operators::avx::transpose(b, b_T, M, N);
+    // ml::operators::avx::transpose(b, b_T, M, N);
     ml::operators::avx::sgemm(a, alpha, b_T, beta, c, M, N, K);
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);

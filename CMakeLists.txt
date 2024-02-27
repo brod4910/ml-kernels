@@ -47,18 +47,18 @@ if(${BUILD_CUDA})
     find_package(CUDAToolkit)
 
     # Specify the CUDA compute capability
-    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-DCUDA_ENABLED -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH})  # Change the compute capability as needed
+    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode=arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH})  # Change the compute capability as needed
 
     # Add the CUDA sources to the project
     file(GLOB_RECURSE CU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/cuda/*.cpp)
-    file(GLOB_RECURSE CUDA_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mlkl/cuda/*.cu)
+    file(GLOB_RECURSE CUDA_SRC_FILES ${PROJECT_SOURCE_DIR}/src/cuda/*.cu)
     file(GLOB_RECURSE CU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cuda/*.h)
     file(GLOB_RECURSE CUDA_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cuda/*.cuh)
 
     add_library(${CUDA_LIB_NAME} SHARED ${CU_SRC_FILES} ${CU_HDR_FILES} ${CUDA_SRC_FILES} ${CUDA_HDR_FILES})
     set_property(TARGET ${CUDA_LIB_NAME} PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH})
     target_link_libraries(${CUDA_LIB_NAME} PRIVATE ${PACKAGES} CUDA::cudart CUDA::cuda_driver)
-    
+    set_target_properties(${CUDA_LIB_NAME} PROPERTIES LINKER_LANGUAGE CUDA)
     target_include_directories(
             ${CUDA_LIB_NAME}
             PUBLIC
