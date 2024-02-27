@@ -43,6 +43,25 @@ __global__ void sgemm_v2(const float *a, float alpha, const float *b, float beta
 
   c[x * N + y] = alpha * accumulator + beta * c[x * N + y];
 }
+
+// Shared memory utilization single-thread responsible for single-output
+template<int blk_size>
+__global__ void sgemm_v3(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
+  constexpr int cache_block = blk_size * blk_size;
+
+  int x = blockDim.x * blk_size + (threadIdx.x / blk_size);
+  int y = blockDim.y * blk_size + (threadIdx.x % blk_size);
+
+  __shared__ float shared_a[cache_block];
+  __shared__ float shared_b[cache_block];
+
+  for (int a_ptr = a; a < M * K; a_ptr += cache_block) {
+    for (int b_ptr = b; b < K * N; b_ptr += cache_block) {
+      shared_a[]
+    }
+  }
+}
+
 }// namespace kernel
 
 void launch_sgemm_v1(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K, int blk_size) {
@@ -56,6 +75,13 @@ void launch_sgemm_v2(const float *a, float alpha, const float *b, float beta, fl
   dim3 grid_dim(ceil_div(M, blk_size), ceil_div(N, blk_size));
   dim3 block_dim(blk_size * blk_size);
   kernel::sgemm_v2<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K, blk_size);
+}
+
+template<int blk_size>
+void launch_sgemm_v3(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
+  dim3 grid_dim(ceil_div(M, blk_size), ceil_div(N, blk_size));
+  dim3 block_dim(blk_size * blk_size);
+  kernel::sgemm_v3<blk_size><<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
 
 }// namespace ml::operators::cuda
