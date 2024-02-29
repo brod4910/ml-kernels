@@ -65,7 +65,7 @@ void sgemm_cuda(size_t M, size_t N, size_t K, float alpha, float beta) {
 
   const int num_runs = 100;
   float total_duration = 0;
-  int blk_size = 32;
+  constexpr int blk_size = 32;
 
   cudaEvent_t start;
   cudaEvent_t stop;
@@ -91,7 +91,8 @@ void sgemm_cuda(size_t M, size_t N, size_t K, float alpha, float beta) {
     cudaEventRecord(start);
 
     // ml::operators::cuda::transpose(b, b_T, M, N);
-    ml::operators::cuda::launch_sgemm_v2(a_d, alpha, b_T_d, beta, c_d, M, N, K, blk_size);
+    // ml::operators::cuda::launch_sgemm_v2(a_d, alpha, b_T_d, beta, c_d, M, N, K, blk_size);
+    ml::operators::cuda::launch_sgemm_v3(a_d, alpha, b_T_d, beta, c_d, M, N, K);
     check_cuda_error(__FILE__, __LINE__);
 
     cudaEventRecord(stop);
