@@ -41,7 +41,7 @@ endif()
 
 if(${BUILD_CUDA})
     set(CUDA_LIB_NAME ${PROJECT_NAME}_cuda)
-    option(CUDA_ARCH "CUDA architecture" "89")
+    option(CUDA_ARCH "CUDA architecture" "86")
     # Find CUDA package and include directories
     enable_language(CUDA)
     find_package(CUDAToolkit)
@@ -54,11 +54,15 @@ if(${BUILD_CUDA})
     file(GLOB_RECURSE CUDA_SRC_FILES ${PROJECT_SOURCE_DIR}/src/cuda/*.cu)
     file(GLOB_RECURSE CU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cuda/*.h)
     file(GLOB_RECURSE CUDA_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cuda/*.cuh)
-
     add_library(${CUDA_LIB_NAME} SHARED ${CU_SRC_FILES} ${CU_HDR_FILES} ${CUDA_SRC_FILES} ${CUDA_HDR_FILES})
     set_property(TARGET ${CUDA_LIB_NAME} PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH})
     target_link_libraries(${CUDA_LIB_NAME} PRIVATE ${PACKAGES} CUDA::cudart CUDA::cuda_driver)
     set_target_properties(${CUDA_LIB_NAME} PROPERTIES LINKER_LANGUAGE CUDA)
+    
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        target_compile_options(${CUDA_LIB_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-G -O0>)
+    endif()
+
     target_include_directories(
             ${CUDA_LIB_NAME}
             PUBLIC
@@ -78,6 +82,9 @@ target_include_directories(
         PUBLIC
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
 )
-target_compile_options(${CPU_LIB_NAME} PUBLIC -Wall -std=c++17 -O3 -ffast-math)
+target_compile_options(${CPU_LIB_NAME} PRIVATE 
+    $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
+    $<$<CONFIG:Release>:-O3 -DNDEBUG -Wall -std=c++17 -O3 -ffast-math>
+)
 
 add_subdirectory(examples)

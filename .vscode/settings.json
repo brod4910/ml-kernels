@@ -1,0 +1,9 @@
+{
+    "cmake.configureArgs": [
+        "-DBUILD_CUDA=ON"
+    ],
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.additionalCompilerSearchDirs": [
+        "/home/luna/miniconda3/envs/triton"
+    ]
+}
