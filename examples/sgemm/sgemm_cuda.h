@@ -1,4 +1,4 @@
 #include <cstddef>
 #include <iostream>
 
-void sgemm_cuda(size_t M, size_t N, size_t K, float alpha, float beta);
+void sgemm_cuda(int M, int N, int K, float alpha, float beta);

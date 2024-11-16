@@ -59,9 +59,13 @@ if(${BUILD_CUDA})
     target_link_libraries(${CUDA_LIB_NAME} PRIVATE ${PACKAGES} CUDA::cudart CUDA::cuda_driver)
     set_target_properties(${CUDA_LIB_NAME} PROPERTIES LINKER_LANGUAGE CUDA)
     
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        target_compile_options(${CUDA_LIB_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-G -O0>)
-    endif()
+    target_compile_options(${CUDA_LIB_NAME} PRIVATE 
+        $<$<COMPILE_LANGUAGE:CUDA>:
+            $<$<CONFIG:Debug>:-G -O0>
+            $<$<CONFIG:RelWithDebInfo>:-G -O2>
+            $<$<CONFIG:Release>:-O3>
+        >
+    )
 
     target_include_directories(
             ${CUDA_LIB_NAME}

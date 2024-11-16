@@ -23,7 +23,7 @@ if (${BUILD_CUDA})
     target_compile_options(sgemm-example PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-D__CUDA__>)
     target_compile_options(sgemm-example PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-D__CUDA__>)
     set_property(TARGET sgemm-example PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH})
-    target_link_libraries(sgemm-example PRIVATE ${PROJECT_NAME}_cuda CUDA::cudart CUDA::cuda_driver)
+    target_link_libraries(sgemm-example PRIVATE ${PROJECT_NAME}_cuda CUDA::cudart CUDA::cuda_driver CUDA::cublas)
     # Specify the CUDA compute capability
 endif()
 

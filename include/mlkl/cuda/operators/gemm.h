@@ -42,7 +42,7 @@ __global__ void sgemm_v1(const float *a, float alpha, const float *b, float beta
   we write to the C matrix, we are using the x value as our y and our y value as our x. In other words, as we compute values of C, we're traversing like so,
   (x, y), (x + 1, y), (x + 2, y)...
 */
-__global__ void sgemm_v2(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K, int blk_size) {
+__global__ void sgemm_v2(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
   int x = blockDim.x * blockIdx.x + threadIdx.x;
   int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -82,11 +82,11 @@ __global__ void sgemm_v3(const float *a, float alpha, const float *b, float beta
     // Essentially, we use the block indices of our kernel to get the
     // corners of each tile we want to compute. Step moves us in the
     // direction we want to move each tile as we traverse memory.
-    // For the A tile that is to the left →
+    // For the A tile that is to the right →
     // For the B tile that is downward ↓
     // We need to move by the number of elements in our block, in this case 16
     // Thus, for each iteration of the loop, we're moving (16 * step) elements
-    // of our tiles to the left for A and down for B.
+    // of our tiles to the right for A and down for B.
     const float *tile_a = &a[(block_y * TILE_X) * K + step * TILE_X];
     const float *tile_b = &b[(step * TILE_X) * N + block_x * TILE_X];
 
@@ -108,6 +108,9 @@ __global__ void sgemm_v3(const float *a, float alpha, const float *b, float beta
   int linear = (blockIdx.y * blockDim.y + tid_y) * N + (blockIdx.x * blockDim.x + tid_x);
   c[linear] = accumulator;
 }
+
+__global__ void sgemm_v4(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
+}
 }// namespace kernel
 
 void launch_sgemm_v1(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
@@ -117,15 +120,21 @@ void launch_sgemm_v1(const float *a, float alpha, const float *b, float beta, fl
   kernel::sgemm_v1<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
 
-void launch_sgemm_v2(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K, int blk_size) {
-  dim3 grid_dim(ceil_div(M, blk_size), ceil_div(N, blk_size));
-  dim3 block_dim(blk_size, blk_size);
-  kernel::sgemm_v2<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K, blk_size);
+void launch_sgemm_v2(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
+  dim3 grid_dim(ceil_div(M, TILE_X), ceil_div(N, TILE_Y));
+  dim3 block_dim(TILE_X, TILE_Y);
+  kernel::sgemm_v2<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
 
 void launch_sgemm_v3(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
   dim3 grid_dim(ceil_div(M, TILE_X), ceil_div(N, TILE_Y));
   dim3 block_dim(TILE_X, TILE_Y);
   kernel::sgemm_v3<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
+}
+
+void launch_sgemm_v4(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
+  dim3 grid_dim(ceil_div(M, TILE_X), ceil_div(N, TILE_Y));
+  dim3 block_dim(TILE_X, TILE_Y);
+  kernel::sgemm_v4<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
 }// namespace ml::operators::cuda
