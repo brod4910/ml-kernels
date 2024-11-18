@@ -93,6 +93,12 @@ void test_kernel(const char *kernel_name,
 
   float total_duration = 0;
 
+  // warm-up
+  for (int i = 0; i < 10; ++i) {
+    kernel(a_d, alpha, b_d, beta, c_d, M, N, K);
+    CHECK_CUDA_ERROR();
+  }
+
   for (int i = 0; i < num_runs; ++i) {
     cudaMemcpy(c_d, c, M * N * sizeof(float), cudaMemcpyHostToDevice);
     CHECK_CUDA_ERROR();
@@ -102,6 +108,7 @@ void test_kernel(const char *kernel_name,
     kernel(a_d, alpha, b_d, beta, c_d, M, N, K);
     CHECK_CUDA_ERROR();
 
+    cudaDeviceSynchronize();
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
 
@@ -136,7 +143,7 @@ void test_kernel(const char *kernel_name,
 void sgemm_cuda(int M, int N, int K, float alpha, float beta) {
   cublasHandle_t handle;
   cublasCreate(&handle);
-  int num_runs = 10;
+  int num_runs = 100;
 
   auto cublas_kernel = [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) {
     CHECK_CUBLAS_STATUS(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha, b, N, a, K, &beta, c, N));
@@ -147,7 +154,7 @@ void sgemm_cuda(int M, int N, int K, float alpha, float beta) {
   // Test custom kernels
   test_kernel("Custom Kernel V2", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v2(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
   test_kernel("Custom Kernel V3", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v3(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
-  test_kernel("Custom Kernel V4", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v4(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
+  // test_kernel("Custom Kernel V4", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v4(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
 
   cublasDestroy(handle);
 }

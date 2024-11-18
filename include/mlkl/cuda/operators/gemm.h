@@ -6,6 +6,7 @@
 // TODO: Delete this and make functions templates
 #define TILE_X 16
 #define TILE_Y 16
+#define WARP_SIZE 32
 
 namespace ml::operators::cuda {
 int ceil_div(int a, int b) {
@@ -110,6 +111,58 @@ __global__ void sgemm_v3(const float *a, float alpha, const float *b, float beta
 }
 
 __global__ void sgemm_v4(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
+  __shared__ float ATile[TILE_Y][TILE_X];
+  __shared__ float BTile[TILE_Y][TILE_X];
+
+  // Block indices dictate the C-block we are going to process
+  // We still need to process an entire row of A and an entire column of B
+  int block_x = blockIdx.x;
+  int block_y = blockIdx.y;
+
+  // Dictates which value of C we're computing within the C-block
+  int tid_x = threadIdx.x;
+  int tid_y = threadIdx.y;
+
+  float accumulator[TILE_Y] = {0.0};
+
+  // M / TILE_X = number of blocks we need to traverse till end of matrices
+  // assuming square matrix
+  for (int step = 0; step < M / TILE_X; ++step) {
+    // calculate the start of both A and B tiles for shared memory.
+    // This is quite an annoying calculation to get correct...
+    // Essentially, we use the block indices of our kernel to get the
+    // corners of each tile we want to compute. Step moves us in the
+    // direction we want to move each tile as we traverse memory.
+    // For the A tile that is to the left →
+    // For the B tile that is downward ↓
+    // We need to move by the number of elements in our block, in this case 16
+    // Thus, for each iteration of the loop, we're moving (16 * step) elements
+    // of our tiles to the left for A and down for B.
+    const float *tile_a = &a[(block_y * TILE_X) * K + (step * TILE_X)];
+    const float *tile_b = &b[(step * TILE_X) * N + (block_x * TILE_X)];
+
+    // Loads the inner-tile elements using the thread indices
+    // Don't forget to multiply by the widths of matrices...
+    // Ooopsies, I may have spent several hours on this... :)
+    ATile[tid_y][tid_x] = tile_a[tid_y * K + tid_x];
+    BTile[tid_y][tid_x] = tile_b[tid_y * N + tid_x];
+
+    __syncthreads();
+
+    for (int k = 0; k < TILE_X; ++k) {
+      // Warp tiling along the k dimension
+      for (int wt = 0; i < WARP_SIZE / 2; wt += 4) {
+      }
+      accumulator[k] += ATile[k][tid_x] * BTile[tid_y][k];
+    }
+
+    __syncthreads();
+  }
+
+  for (int i = 0; i < TILE_Y; ++i) {
+    int linear = (blockIdx.y * blockDim.y + tid_y + i) * N + (blockIdx.x * blockDim.x + tid_x);
+    c[linear] = accumulator[i];
+  }
 }
 }// namespace kernel
 
