@@ -1,7 +1,9 @@
 
 #pragma once
 #include <cstddef>
+#include <cstdio>
 #include <cuda_runtime.h>
+#include <iostream>
 
 // TODO: Delete this and make functions templates
 #define TILE_X 16
@@ -60,7 +62,8 @@ __global__ void sgemm_v2(const float *a, float alpha, const float *b, float beta
   c[y * N + x] = accumulator;
 }
 
-__global__ void sgemm_v3(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
+__global__ void
+sgemm_v3(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
   __shared__ float ATile[TILE_Y][TILE_X];
   __shared__ float BTile[TILE_Y][TILE_X];
 
@@ -110,9 +113,16 @@ __global__ void sgemm_v3(const float *a, float alpha, const float *b, float beta
   c[linear] = accumulator;
 }
 
+// TODO: Delete this and make functions templates
+#define BLOCK_TILE_X 16
+#define BLOCK_TILE_Y 16
+#define WARP_SIZE 32
+#define NUM_TH_ITEMS_M 4
+#define NUM_TH_ITEMS_N 4
+
 __global__ void sgemm_v4(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
-  __shared__ float ATile[TILE_Y][TILE_X];
-  __shared__ float BTile[TILE_Y][TILE_X];
+  __shared__ float ATile[BLOCK_TILE_Y][BLOCK_TILE_X];
+  __shared__ float BTile[BLOCK_TILE_Y][BLOCK_TILE_X];
 
   // Block indices dictate the C-block we are going to process
   // We still need to process an entire row of A and an entire column of B
@@ -123,45 +133,52 @@ __global__ void sgemm_v4(const float *a, float alpha, const float *b, float beta
   int tid_x = threadIdx.x;
   int tid_y = threadIdx.y;
 
-  float accumulator[TILE_Y] = {0.0};
+  int warp_id = threadIdx.x / WARP_SIZE;
+  int lane_id = threadIdx.x % WARP_SIZE;
 
-  // M / TILE_X = number of blocks we need to traverse till end of matrices
-  // assuming square matrix
-  for (int step = 0; step < M / TILE_X; ++step) {
-    // calculate the start of both A and B tiles for shared memory.
-    // This is quite an annoying calculation to get correct...
-    // Essentially, we use the block indices of our kernel to get the
-    // corners of each tile we want to compute. Step moves us in the
-    // direction we want to move each tile as we traverse memory.
-    // For the A tile that is to the left →
-    // For the B tile that is downward ↓
-    // We need to move by the number of elements in our block, in this case 16
-    // Thus, for each iteration of the loop, we're moving (16 * step) elements
-    // of our tiles to the left for A and down for B.
-    const float *tile_a = &a[(block_y * TILE_X) * K + (step * TILE_X)];
-    const float *tile_b = &b[(step * TILE_X) * N + (block_x * TILE_X)];
+  float accumulator[NUM_TH_ITEMS_M][NUM_TH_ITEMS_N] = {0.0};
+  float a_frag[NUM_TH_ITEMS_M];
+  float b_frag[NUM_TH_ITEMS_N];
 
-    // Loads the inner-tile elements using the thread indices
-    // Don't forget to multiply by the widths of matrices...
-    // Ooopsies, I may have spent several hours on this... :)
-    ATile[tid_y][tid_x] = tile_a[tid_y * K + tid_x];
-    BTile[tid_y][tid_x] = tile_b[tid_y * N + tid_x];
+  for (int step = 0; step < K / BLOCK_TILE_X; ++step) {
+    const float *tile_a = &a[(block_y * BLOCK_TILE_X) * K + (step * BLOCK_TILE_X)];
+    const float *tile_b = &b[(step * BLOCK_TILE_X) * N + (block_x * BLOCK_TILE_X)];
+
+    for (int i = 0; i < NUM_TH_ITEMS_M; ++i) {
+      for (int j = 0; j < NUM_TH_ITEMS_N; ++j) {
+        ATile[tid_y + (j * blockDim.x)][tid_x + (i * blockDim.y)] = tile_a[(tid_y + (j * blockDim.x)) * K + ((tid_x + (i * blockDim.y)))];
+        BTile[tid_y + (j * blockDim.x)][tid_x + (i * blockDim.y)] = tile_b[(tid_y + (j * blockDim.x)) * N + ((tid_x + (i * blockDim.y)))];
+      }
+    }
 
     __syncthreads();
 
-    for (int k = 0; k < TILE_X; ++k) {
-      // Warp tiling along the k dimension
-      for (int wt = 0; i < WARP_SIZE / 2; wt += 4) {
+    for (int k = 0; k < BLOCK_TILE_X; ++k) {
+      for (int i = 0; i < NUM_TH_ITEMS_M; ++i) {
+        a_frag[i] = ATile[tid_y + (NUM_TH_ITEMS_M * i)][k];
+
+        // printf("ATile Load From (x,y):  %d, %d , %d, %d\n", tid_x, tid_y, tid_y + (NUM_TH_ITEMS_M * i), k);
       }
-      accumulator[k] += ATile[k][tid_x] * BTile[tid_y][k];
+      for (int j = 0; j < NUM_TH_ITEMS_N; ++j) {
+        b_frag[j] = BTile[k][tid_x + (NUM_TH_ITEMS_N * j)];
+        // printf("BTile Load From (x,y):  %d, %d , %d, %d\n", tid_x, tid_y, k, tid_x + (NUM_TH_ITEMS_N * j));
+      }
+
+      for (int i = 0; i < NUM_TH_ITEMS_M; ++i) {
+        for (int j = 0; j < NUM_TH_ITEMS_N; ++j) {
+          accumulator[i][j] += a_frag[i] * b_frag[j];
+        }
+      }
     }
 
     __syncthreads();
   }
 
-  for (int i = 0; i < TILE_Y; ++i) {
-    int linear = (blockIdx.y * blockDim.y + tid_y + i) * N + (blockIdx.x * blockDim.x + tid_x);
-    c[linear] = accumulator[i];
+  for (int i = 0; i < NUM_TH_ITEMS_M; ++i) {
+    for (int j = 0; j < NUM_TH_ITEMS_N; ++j) {
+      int linear = ((blockIdx.x * blockDim.x) + (tid_y + (i * NUM_TH_ITEMS_M))) * N + ((blockIdx.y * blockDim.y) + (tid_x + (j * NUM_TH_ITEMS_N)));
+      c[linear] = accumulator[i][j];
+    }
   }
 }
 }// namespace kernel
@@ -186,8 +203,8 @@ void launch_sgemm_v3(const float *a, float alpha, const float *b, float beta, fl
 }
 
 void launch_sgemm_v4(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
-  dim3 grid_dim(ceil_div(M, TILE_X), ceil_div(N, TILE_Y));
-  dim3 block_dim(TILE_X, TILE_Y);
+  dim3 grid_dim(ceil_div(M, BLOCK_TILE_X), ceil_div(N, BLOCK_TILE_Y));
+  dim3 block_dim(BLOCK_TILE_X / NUM_TH_ITEMS_M, BLOCK_TILE_Y / NUM_TH_ITEMS_N);
   kernel::sgemm_v4<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
 }// namespace ml::operators::cuda
