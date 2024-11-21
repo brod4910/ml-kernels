@@ -155,13 +155,10 @@ __global__ void sgemm_v4(const float *a, float alpha, const float *b, float beta
 
     for (int k = 0; k < BLOCK_TILE_X; ++k) {
       for (int i = 0; i < NUM_TH_ITEMS_M; ++i) {
-        a_frag[i] = ATile[tid_y + (NUM_TH_ITEMS_M * i)][k];
-
-        // printf("ATile Load From (x,y):  %d, %d , %d, %d\n", tid_x, tid_y, tid_y + (NUM_TH_ITEMS_M * i), k);
+        a_frag[i] = ATile[tid_y * NUM_TH_ITEMS_M + i][k];
       }
       for (int j = 0; j < NUM_TH_ITEMS_N; ++j) {
-        b_frag[j] = BTile[k][tid_x + (NUM_TH_ITEMS_N * j)];
-        // printf("BTile Load From (x,y):  %d, %d , %d, %d\n", tid_x, tid_y, k, tid_x + (NUM_TH_ITEMS_N * j));
+        b_frag[j] = BTile[k][tid_x * NUM_TH_ITEMS_N + j];
       }
 
       for (int i = 0; i < NUM_TH_ITEMS_M; ++i) {
@@ -176,7 +173,7 @@ __global__ void sgemm_v4(const float *a, float alpha, const float *b, float beta
 
   for (int i = 0; i < NUM_TH_ITEMS_M; ++i) {
     for (int j = 0; j < NUM_TH_ITEMS_N; ++j) {
-      int linear = ((blockIdx.x * blockDim.x) + (tid_y + (i * NUM_TH_ITEMS_M))) * N + ((blockIdx.y * blockDim.y) + (tid_x + (j * NUM_TH_ITEMS_N)));
+      int linear = ((blockIdx.y * BLOCK_TILE_Y) + (tid_y * NUM_TH_ITEMS_M + i)) * N + ((blockIdx.x * BLOCK_TILE_X) + (tid_x * NUM_TH_ITEMS_N + j));
       c[linear] = accumulator[i][j];
     }
   }

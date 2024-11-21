@@ -146,13 +146,19 @@ void test_kernel(const char *kernel_name,
     std::cerr << "Kernel " << kernel_name << " produced incorrect results." << std::endl;
   } else {
     float average_duration = total_duration / num_runs;
-    std::cout << "Kernel " << kernel_name << " average time: " << average_duration << " ms" << std::endl;
+    float gflops = (2.0f * M * N * K) / (average_duration / 1000.0f) / 1e9;
+
+    std::cout << "Kernel: " << kernel_name << " | "
+              << "Size: " << M << "x" << K << "x" << N << " | "
+              << "Time: " << average_duration << " ms | "
+              << "GFLOPS: " << gflops << std::endl;
   }
 
   // std::cout << "matrix: \n";
   // print_matrix(c, M, N);
   // std::cout << "ref: \n";
   // print_matrix(ref_matrix, M, N);
+
   // Cleanup
   cudaEventDestroy(start);
   cudaEventDestroy(stop);
@@ -177,8 +183,8 @@ void sgemm_cuda(int M, int N, int K, float alpha, float beta) {
   test_kernel("CUBLAS", cublas_kernel, M, N, K, alpha, beta, num_runs);
 
   // Test custom kernels
-  // test_kernel("Custom Kernel V2", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v2(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
-  // test_kernel("Custom Kernel V3", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v3(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
+  test_kernel("Custom Kernel V2", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v2(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
+  test_kernel("Custom Kernel V3", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v3(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
   test_kernel("Custom Kernel V4", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v4(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
 
   cublasDestroy(handle);
