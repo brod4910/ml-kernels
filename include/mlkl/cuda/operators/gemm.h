@@ -114,8 +114,8 @@ sgemm_v3(const float *a, float alpha, const float *b, float beta, float *c, size
 }
 
 // TODO: Delete this and make functions templates
-#define BLOCK_TILE_X 16
-#define BLOCK_TILE_Y 16
+#define BLOCK_TILE_X 64
+#define BLOCK_TILE_Y 64
 #define WARP_SIZE 32
 #define NUM_TH_ITEMS_M 4
 #define NUM_TH_ITEMS_N 4
@@ -171,8 +171,8 @@ __global__ void sgemm_v4(const float *a, float alpha, const float *b, float beta
     __syncthreads();
   }
 
-  for (int i = 0; i < NUM_TH_ITEMS_M; ++i) {
-    for (int j = 0; j < NUM_TH_ITEMS_N; ++j) {
+  for (int j = 0; j < NUM_TH_ITEMS_N; ++j) {
+    for (int i = 0; i < NUM_TH_ITEMS_M; ++i) {
       int linear = ((blockIdx.y * BLOCK_TILE_Y) + (tid_y * NUM_TH_ITEMS_M + i)) * N + ((blockIdx.x * BLOCK_TILE_X) + (tid_x * NUM_TH_ITEMS_N + j));
       c[linear] = accumulator[i][j];
     }

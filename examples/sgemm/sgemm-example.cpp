@@ -19,10 +19,10 @@
 int main() {
   // clang-format off
   std::vector<std::tuple<int, int, int>> matrix_sizes = {
-    // {256, 256, 256},
+    {256, 256, 256},
     {512, 512, 512},
-    // {1024, 1024, 1024},
-    // {2048, 2048, 2048}
+    {1024, 1024, 1024},
+    {2048, 2048, 2048}
   };
   // clang-format on
 
