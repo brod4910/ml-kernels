@@ -217,6 +217,8 @@ __global__ void sgemm_v4(const float *a, float alpha, const float *b, float beta
 #define WN 16
 #define WTTGM 2
 #define WTTGN 2
+#define WTTM 16
+#define WTTN 8
 #define TM 4
 #define TN 4
 
@@ -232,14 +234,16 @@ __global__ void sgemm_v5(const float *a, float alpha, const float *b, float beta
   // Dictates which value of C we're computing within the C-block
   int tid_x = threadIdx.x;
   int tid_y = threadIdx.y;
-
+  // Calculate the warp-tile we are currently in
   int warp_id = (tid_y * (K5_BN / TN) + tid_x) / WARP_SIZE;
-  int warp_row = warp_id % (K5_BN / TN);
-  int warp_col = warp_id / (K5_BN / TN);
-
+  // calculate row and col of the warp tile
+  int warp_col = warp_id % (K5_BN / TN);
+  int warp_row = warp_id / (K5_BN / TN);
+  // calculate the thread or "lane" of the warp we're in
   int warp_t_idx = (tid_y * (K5_BN / TN) + tid_x) % WARP_SIZE;
-  int warp_x_idx = warp_t_idx % (WGN / TN);
-  int warp_y_idx = warp_t_idx / (WGN / TN);
+  // calculate the row and column of the thread within the warp tile
+  int warp_t_col_idx = warp_t_idx % (WN / TN);
+  int warp_t_row_idx = warp_t_idx / (WN / TN);
 
   float accumulator[TM * WTTGM][TN * WTTGN] = {0.0};
   float a_frag[TM * WTTGM];
@@ -259,23 +263,23 @@ __global__ void sgemm_v5(const float *a, float alpha, const float *b, float beta
     __syncthreads();
 
     for (int k = 0; k < K5_BM; ++k) {
-      for (int warp_m = 0; warp_m < WTTGM; ++warp_m) {
+      for (int wgm = 0; wgm < WTTGM; ++wgm) {
         for (int i = 0; i < TM; ++i) {
-          a_frag[warp_m * TM + i] = ATile[warp_m * WTTGM + tid_y * TM + i][k];
+          a_frag[wgm * TM + i] = ATile[warp_row * WM + wgm * WTTM + warp_t_row_idx * TM + i][k];
         }
       }
 
-      for (int warp_n = 0; warp_n < WTTGN; ++warp_n) {
+      for (int wgn = 0; wgn < WTTGN; ++wgn) {
         for (int j = 0; j < TN; ++j) {
-          b_frag[warp_n * TN + j] = BTile[k][warp_n * WTTGN + tid_x * TN + j];
+          b_frag[wgn * TN + j] = BTile[k][warp_col * WN + wgn * WTTN + warp_t_col_idx * TN + j];
         }
       }
 
-      for (int warp_m = 0; warp_m < WTTGM; ++warp_m) {
-        for (int warp_n = 0; warp_n < WTTGN; ++warp_n) {
+      for (int wgm = 0; wgm < WTTGM; ++wgm) {
+        for (int wgn = 0; wgn < WTTGN; ++wgn) {
           for (int i = 0; i < TM; ++i) {
             for (int j = 0; j < TN; ++j) {
-              accumulator[warp_m * TM + i][warp_n * TN + j] += a_frag[warp_m * TM + i] * b_frag[warp_n * TN + j];
+              accumulator[wgm * TM + i][wgn * TN + j] += a_frag[wgm * TM + i] * b_frag[wgn * TN + j];
             }
           }
         }
@@ -285,14 +289,16 @@ __global__ void sgemm_v5(const float *a, float alpha, const float *b, float beta
     __syncthreads();
   }
 
-  for (int warp_n = 0; warp_n < WTTGN; ++warp_n) {
-    for (int warp_m = 0; warp_m < WTTGM; ++warp_m) {
-      float *warp_c = &c[(block_y * K5_BN + warp_n * WTTGN) * N + (block_x * K5_BM + warp_m * WTTGM)];
+  float *warp_tile = &c[(block_x * K5_BM + warp_col * WM) * N + (block_y * K5_BN + warp_row * WN)];
 
-      for (int j = 0; j < TN; ++j) {
-        for (int i = 0; i < TM; ++i) {
-          int linear = ((tid_y * TN + j) * WM + (tid_x * TM + i));
-          warp_c[linear] = accumulator[i][j];
+  for (int wgm = 0; wgm < WTTGM; ++wgm) {
+    for (int wgn = 0; wgn < WTTGN; ++wgn) {
+      float *warp_c = &warp_tile[(wgm * WTTM) * N + (wgn * WTTN)];
+
+      for (int i = 0; i < TM; ++i) {
+        for (int j = 0; j < TN; ++j) {
+          int linear = ((warp_t_row_idx * TM + i) * N + (warp_t_col_idx * TN + j));
+          warp_c[linear] = accumulator[wgm * TM + i][wgn * TN + j];
         }
       }
     }

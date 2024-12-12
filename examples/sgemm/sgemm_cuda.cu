@@ -186,6 +186,7 @@ void sgemm_cuda(int M, int N, int K, float alpha, float beta) {
   test_kernel("Custom Kernel V2", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v2(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
   test_kernel("Custom Kernel V3", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v3(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
   test_kernel("Custom Kernel V4", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v4(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
+  test_kernel("Custom Kernel V5", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v5(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
 
   cublasDestroy(handle);
 }
