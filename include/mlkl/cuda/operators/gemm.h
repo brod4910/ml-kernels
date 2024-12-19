@@ -258,8 +258,8 @@ __global__ void sgemm_v5(const float *a, float alpha, const float *b, float beta
 
     for (int nlx = 0; nlx < num_loads_x; ++nlx) {
       for (int nly = 0; nly < num_loads_y; ++nly) {
-        ATile[tid_y + (nlx * blockDim.x)][tid_x + (nly * blockDim.y)] = tile_a[((nly * blockDim.x) + tid_x) * K + ((nlx * blockDim.y) + tid_y)];
-        BTile[tid_y + (nlx * blockDim.x)][tid_x + (nly * blockDim.y)] = tile_b[((nlx * blockDim.y) + tid_y) * N + ((nly * blockDim.x) + tid_x)];
+        ATile[tid_x + (nlx * blockDim.x)][tid_y + (nly * blockDim.y)] = tile_a[((nlx * blockDim.x) + tid_x) * K + ((nly * blockDim.y) + tid_y)];
+        BTile[tid_y + (nly * blockDim.y)][tid_x + (nlx * blockDim.x)] = tile_b[((nly * blockDim.y) + tid_y) * N + ((nlx * blockDim.x) + tid_x)];
       }
     }
 
