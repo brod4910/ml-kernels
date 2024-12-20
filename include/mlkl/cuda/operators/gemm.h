@@ -180,6 +180,8 @@ __global__ void sgemm_v4(const float *a, float alpha, const float *b, float beta
         b_frag[j] = BTile[k][tid_x * NUM_TH_ITEMS_N + j];
       }
 
+      volatile int vb = 0;
+
       // Items are now at the thread-level so we can finally compute
       // our dot-products of our values in registers.
       for (int i = 0; i < NUM_TH_ITEMS_M; ++i) {
@@ -210,18 +212,18 @@ __global__ void sgemm_v4(const float *a, float alpha, const float *b, float beta
 */
 #define WARP_SIZE 32
 #define K5_BM 64
-#define K5_BN 32
-#define K5_BK 8
+#define K5_BN 64
+#define K5_BK 32
 #define WGM 2
 #define WGN 4
-#define WM K5_BM / WGM
-#define WN K5_BN / WGN
+#define WM 64
+#define WN 32
 #define WTTGM 2
 #define WTTGN 2
 #define WTM WM / WTTGM
 #define WTN WN / WTTGN
-#define TM 1
-#define TN 1
+#define TM 4
+#define TN 4
 
 __global__ void sgemm_v5(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
   __shared__ float ATile[K5_BM][K5_BK];
@@ -235,12 +237,13 @@ __global__ void sgemm_v5(const float *a, float alpha, const float *b, float beta
   // Dictates which value of C we're computing within the C-block
   int tid_x = threadIdx.x;
   int tid_y = threadIdx.y;
+  int tid = (tid_y * blockDim.x + tid_x);
 
-  int warp_id = (tid_y * blockDim.x + tid_x) / WARP_SIZE;
+  int warp_id = tid / WARP_SIZE;
   int warp_row = warp_id / WGN;
   int warp_col = warp_id % WGN;
 
-  int lane_id = (tid_y * blockDim.x + tid_x) % WARP_SIZE;
+  int lane_id = tid % WARP_SIZE;
   int lane_row = lane_id / (WTN / TN);
   int lane_col = lane_id % (WTN / TN);
 
@@ -248,18 +251,25 @@ __global__ void sgemm_v5(const float *a, float alpha, const float *b, float beta
   float a_frag[TM * WTTGM];
   float b_frag[TN * WTTGN];
 
-  int num_loads = (K5_BM * K5_BN) / (blockDim.x * blockDim.y);
-  int num_loads_x = num_loads / 2;
-  int num_loads_y = num_loads / 2;
+  int ldAK = K5_BK / blockDim.x;
+  int ldAM = K5_BM / blockDim.y;
+
+  int ldBN = K5_BN / blockDim.x;
+  int ldBK = K5_BK / blockDim.y;
 
   for (int step = 0; step < K / K5_BK; ++step) {
     const float *tile_a = &a[(block_y * K5_BM) * K + (step * K5_BK)];
     const float *tile_b = &b[(step * K5_BK) * N + (block_x * K5_BN)];
 
-    for (int nlx = 0; nlx < num_loads_x; ++nlx) {
-      for (int nly = 0; nly < num_loads_y; ++nly) {
-        ATile[(nly * blockDim.y) + tid_y][(nlx * blockDim.x) + tid_x] = tile_a[((nly * blockDim.y) + tid_y) * K + ((nlx * blockDim.x) + tid_x)];
-        BTile[(nlx * blockDim.x) + tid_x][(nly * blockDim.y) + tid_y] = tile_b[((nlx * blockDim.x) + tid_x) * N + ((nly * blockDim.y) + tid_y)];
+    for (int ldak = 0; ldak < ldAK; ++ldak) {
+      for (int ldam = 0; ldam < ldAM; ++ldam) {
+        ATile[ldam * blockDim.y + tid_y][ldak * blockDim.x + tid_x] = tile_a[(ldam * blockDim.y + tid_y) * K + (ldak * blockDim.x + tid_x)];
+      }
+    }
+
+    for (int ldbn = 0; ldbn < ldBN; ++ldbn) {
+      for (int ldbk = 0; ldbk < ldBK; ++ldbk) {
+        BTile[(ldbk * blockDim.y) + tid_y][(ldbn * blockDim.x) + tid_x] = tile_b[(ldbk * blockDim.y + tid_y) * N + (ldbn * blockDim.x + tid_x)];
       }
     }
 
@@ -299,7 +309,7 @@ __global__ void sgemm_v5(const float *a, float alpha, const float *b, float beta
       float *warp_c = &CTile[(gm * WTM) * N + (gn * WTN)];
       for (int tn = 0; tn < TN; ++tn) {
         for (int tm = 0; tm < TM; ++tm) {
-          warp_c[(lane_row * TM + tm) * N + (lane_col * TN + tn)] = accumulator[tm][tn];
+          warp_c[(lane_row * TM + tm) * N + (lane_col * TN + tn)] = accumulator[gm * TM + tm][gn * TN + tn];
         }
       }
     }
