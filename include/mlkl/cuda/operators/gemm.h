@@ -209,9 +209,9 @@ __global__ void sgemm_v4(const float *a, float alpha, const float *b, float beta
   So we must modify the existing kernel in a way that makes sense for tiling along our hidden "warp" dimension.
 */
 #define WARP_SIZE 32
-#define K5_BM 32
+#define K5_BM 64
 #define K5_BN 32
-#define K5_BK 32
+#define K5_BK 8
 #define WGM 2
 #define WGN 4
 #define WM K5_BM / WGM
@@ -253,38 +253,36 @@ __global__ void sgemm_v5(const float *a, float alpha, const float *b, float beta
   int num_loads_y = num_loads / 2;
 
   for (int step = 0; step < K / K5_BK; ++step) {
-    const float *tile_a = &a[(block_x * K5_BM) * K + (step * K5_BK)];
-    const float *tile_b = &b[(step * K5_BK) * N + (block_y * K5_BN)];
+    const float *tile_a = &a[(block_y * K5_BM) * K + (step * K5_BK)];
+    const float *tile_b = &b[(step * K5_BK) * N + (block_x * K5_BN)];
 
     for (int nlx = 0; nlx < num_loads_x; ++nlx) {
       for (int nly = 0; nly < num_loads_y; ++nly) {
-        ATile[tid_x + (nlx * blockDim.x)][tid_y + (nly * blockDim.y)] = tile_a[((nlx * blockDim.x) + tid_x) * K + ((nly * blockDim.y) + tid_y)];
-        BTile[tid_y + (nly * blockDim.y)][tid_x + (nlx * blockDim.x)] = tile_b[((nly * blockDim.y) + tid_y) * N + ((nlx * blockDim.x) + tid_x)];
+        ATile[(nly * blockDim.y) + tid_y][(nlx * blockDim.x) + tid_x] = tile_a[((nly * blockDim.y) + tid_y) * K + ((nlx * blockDim.x) + tid_x)];
+        BTile[(nlx * blockDim.x) + tid_x][(nly * blockDim.y) + tid_y] = tile_b[((nlx * blockDim.x) + tid_x) * N + ((nly * blockDim.y) + tid_y)];
       }
     }
 
     __syncthreads();
 
     for (int k = 0; k < K5_BK; ++k) {
-      auto AWarp = &ATile[warp_row * WM];
       for (int gm = 0; gm < WTTGM; ++gm) {
         for (int tm = 0; tm < TM; ++tm) {
-          a_frag[gm * TM + tm] = AWarp[(gm * WTM) + (lane_row * TM) + tm][k];
+          a_frag[gm * TM + tm] = ATile[(warp_row * WM) + (gm * WTM) + (lane_row * TM) + tm][k];
         }
       }
 
       for (int gn = 0; gn < WTTGN; ++gn) {
-        auto BWarp = &BTile[k];
         for (int tn = 0; tn < TN; ++tn) {
-          b_frag[gn * TN + tn] = BWarp[0][(warp_col * WN) + (gn * WTN) + (lane_col * TN) + tn];
+          b_frag[gn * TN + tn] = BTile[k][(warp_col * WN) + (gn * WTN) + (lane_col * TN) + tn];
         }
       }
 
       for (int gm = 0; gm < WTTGM; ++gm) {
         for (int gn = 0; gn < WTTGN; ++gn) {
-          for (int i = 0; i < TM; ++i) {
-            for (int j = 0; j < TN; ++j) {
-              accumulator[gm * TM + i][gn * TN + j] += a_frag[gm * TM + i] * b_frag[gn * TN + j];
+          for (int tm = 0; tm < TM; ++tm) {
+            for (int tn = 0; tn < TN; ++tn) {
+              accumulator[gm * TM + tm][gn * TN + tn] += a_frag[gm * TM + tm] * b_frag[gn * TN + tn];
             }
           }
         }
@@ -294,14 +292,14 @@ __global__ void sgemm_v5(const float *a, float alpha, const float *b, float beta
     __syncthreads();
   }
 
-  float *CTile = &c[(block_x * K5_BM) * N + (block_y * K5_BN)];
-  float *warp_c = &CTile[(warp_row * WM) * K5_BN + (warp_col * WN)];
+  float *CTile = &c[(block_y * K5_BM + warp_row * WM) * N + (block_x * K5_BN + warp_col * WN)];
 
   for (int gn = 0; gn < WTTGN; ++gn) {
     for (int gm = 0; gm < WTTGM; ++gm) {
+      float *warp_c = &CTile[(gm * WTM) * N + (gn * WTN)];
       for (int tn = 0; tn < TN; ++tn) {
         for (int tm = 0; tm < TM; ++tm) {
-          warp_c[((gm * WTM) + (lane_row * TM) + tn) * WN + ((gn * WTN) + (lane_col * TN) + tn)] = accumulator[tm][tn];
+          warp_c[(lane_row * TM + tm) * N + (lane_col * TN + tn)] = accumulator[tm][tn];
         }
       }
     }
@@ -335,8 +333,8 @@ void launch_sgemm_v4(const float *a, float alpha, const float *b, float beta, fl
 }
 
 void launch_sgemm_v5(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
-  dim3 grid_dim(ceil_div(M, K5_BM), ceil_div(N, K5_BN));
-  dim3 block_dim(K5_BM / (TM * WTTGM), K5_BN / (TN * WTTGN));
+  dim3 grid_dim(ceil_div(N, K5_BN), ceil_div(M, K5_BM));
+  dim3 block_dim(K5_BN / (TN * WTTGN), K5_BM / (TM * WTTGM));
   kernel::sgemm_v5<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
 }// namespace ml::operators::cuda
