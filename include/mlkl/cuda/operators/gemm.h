@@ -211,8 +211,8 @@ __global__ void sgemm_v4(const float *a, float alpha, const float *b, float beta
   So we must modify the existing kernel in a way that makes sense for tiling along our hidden "warp" dimension.
 */
 #define WARP_SIZE 32
-#define NUM_THREADS_X 16
 #define NUM_THREADS_Y 8
+#define NUM_THREADS_X 16
 #define K5_BM 64
 #define K5_BN 128
 #define K5_BK 64
@@ -265,8 +265,8 @@ __global__ void sgemm_v5(const float *a, float alpha, const float *b, float beta
       }
     }
 
-    for (int ldbn = 0; ldbn < ldBN; ++ldbn) {
-      for (int ldbk = 0; ldbk < ldBK; ++ldbk) {
+    for (int ldbk = 0; ldbk < ldBK; ++ldbk) {
+      for (int ldbn = 0; ldbn < ldBN; ++ldbn) {
         BTile[(ldbk * blockDim.y) + tid_y][(ldbn * blockDim.x) + tid_x] = tile_b[(ldbk * blockDim.y + tid_y) * N + (ldbn * blockDim.x + tid_x)];
       }
     }
