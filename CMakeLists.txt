@@ -63,7 +63,7 @@ if(${BUILD_CUDA})
         $<$<COMPILE_LANGUAGE:CUDA>:
             $<$<CONFIG:Debug>:-G -O0>
             $<$<CONFIG:RelWithDebInfo>:-G -O2>
-            $<$<CONFIG:Release>:-O3>
+            $<$<CONFIG:Release>:-O3 -lineinfo>
         >
     )
 
