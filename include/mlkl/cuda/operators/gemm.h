@@ -303,12 +303,16 @@ __global__ void sgemm_v5(const float *a, float alpha, const float *b, float beta
   }
 }
 
-// __device__ __forceinline__ float4 read_float4(float *p) {
-//   return reinterpret_cast<float4>(&(p[0]));
-// }
+__device__ __forceinline__ const float4 read_float4(const float *p) {
+  return reinterpret_cast<const float4 *>(p)[0];
+}
 
 __device__ __forceinline__ void write_float4(float *p, const float *value) {
   reinterpret_cast<float4 *>(p)[0] = reinterpret_cast<const float4 *>(value)[0];
+}
+
+__device__ __forceinline__ void write_float4(float *p, float *value) {
+  reinterpret_cast<float4 *>(p)[0] = reinterpret_cast<float4 *>(value)[0];
 }
 
 template<int BM, int BN, int BK, int WM, int WN, int TM, int TN, int WTGM, int WTGN, int num_threads_x = 16, int num_threads_y = 8>
@@ -321,6 +325,7 @@ __global__ void sgemm_v6(const float *a, float alpha, const float *b, float beta
   constexpr int WTM = WM / WTGM;
   constexpr int WTN = WN / WTGN;
   constexpr int WTN4 = WTN / 4;
+  constexpr int num_threads = num_threads_x * num_threads_y;
 
   int block_x = blockIdx.x;
   int block_y = blockIdx.y;
@@ -341,40 +346,42 @@ __global__ void sgemm_v6(const float *a, float alpha, const float *b, float beta
   float a_frag[TM * WTGM];
   float b_frag[TN * WTGN];
 
-  int ldAM = BM / blockDim.y;
-  int ldAK = BK4 / blockDim.x;
+  int ldA_row = tid / BK4;
+  int ldA_col = tid % BK4 * 4;
+  int ldA_stride = num_threads / BK4;
 
-  int ldBK = BK / blockDim.y;
-  int ldBN = BN4 / blockDim.x;
+  int ldB_row = tid / BN4;
+  int ldB_col = tid % BN4 * 4;
+  int ldB_stride = num_threads / BN4;
 
   for (int step = 0; step < K / BK; ++step) {
     const float *tile_a = &a[(block_y * BM) * K + (step * BK)];
     const float *tile_b = &b[(step * BK) * N + (block_x * BN)];
 
-    for (int ldak = 0; ldak < ldAK; ++ldak) {
-      for (int ldam = 0; ldam < ldAM; ++ldam) {
-        write_float4(&ATile[ldak * blockDim.x + tid_x][ldam * blockDim.y + tid_y + 4], &tile_a[(ldam * blockDim.y + tid_y) * K + (ldak * blockDim.x + tid_x + 4)]);
-      }
+    for (int offset = 0; offset < BM; offset += ldA_stride) {
+      const float4 tmp = read_float4(&tile_a[(ldA_row + offset) * K + ldA_col]);
+      ATile[ldA_col][ldA_row + offset] = tmp.w;
+      ATile[ldA_col + 1][ldA_row + offset] = tmp.x;
+      ATile[ldA_col + 2][ldA_row + offset] = tmp.y;
+      ATile[ldA_col + 3][ldA_row + offset] = tmp.z;
     }
 
-    for (int ldbn = 0; ldbn < ldBN; ++ldbn) {
-      for (int ldbk = 0; ldbk < ldBK; ++ldbk) {
-        write_float4(&BTile[(ldbk * blockDim.y) + tid_y][(ldbn * blockDim.x) + tid_x + 4], &tile_b[(ldbk * blockDim.y + tid_y) * N + (ldbn * blockDim.x + tid_x + 4)]);
-      }
+    for (int offset = 0; offset < BK; offset += ldB_stride) {
+      write_float4(&BTile[ldB_row + offset][ldB_col], &tile_b[(ldB_row + offset) * N + ldB_col]);
     }
 
     __syncthreads();
 
     for (int k = 0; k < BK; ++k) {
       for (int gm = 0; gm < WTGM; ++gm) {
-        for (int tm = 0; tm < TM; ++tm) {
-          a_frag[gm * TM + tm] = ATile[k][(warp_row * WM) + (gm * WTM) + (lane_row * TM) + tm];
+        for (int tm = 0; tm < TM; tm += 4) {
+          write_float4(&a_frag[gm * TM + tm], &ATile[k][(warp_row * WM) + (gm * WTM) + (lane_row * TM) + tm]);
         }
       }
 
       for (int gn = 0; gn < WTGN; ++gn) {
-        for (int tn = 0; tn < TN; ++tn) {
-          b_frag[gn * TN + tn] = BTile[k][(warp_col * WN) + (gn * WTN) + (lane_col * TN) + tn];
+        for (int tn = 0; tn < TN; tn += 4) {
+          write_float4(&b_frag[gn * TN + tn], &BTile[k][(warp_col * WN) + (gn * WTN) + (lane_col * TN) + tn]);
         }
       }
 
@@ -394,12 +401,12 @@ __global__ void sgemm_v6(const float *a, float alpha, const float *b, float beta
 
   float *CTile = &c[(block_y * BM + warp_row * WM) * N + (block_x * BN + warp_col * WN)];
 
-  for (int gn = 0; gn < WTGN; ++gn) {
-    for (int gm = 0; gm < WTGM; ++gm) {
+  for (int gm = 0; gm < WTGM; ++gm) {
+    for (int gn = 0; gn < WTGN; ++gn) {
       float *warp_c = &CTile[(gm * WTM) * N + (gn * WTN)];
       for (int tm = 0; tm < TM; ++tm) {
-        for (int tn = 0; tn < TN; ++tn) {
-          warp_c[(lane_row * TM + tm) * N + (lane_col * TN + tn)] = accumulator[gm * TM + tm][gn * TN + tn];
+        for (int tn = 0; tn < TN; tn += 4) {
+          write_float4(&warp_c[(lane_row * TM + tm) * N + (lane_col * TN + tn)], &accumulator[gm * TM + tm][gn * TN + tn]);
         }
       }
     }
