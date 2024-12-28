@@ -3,7 +3,9 @@
 #include <cstddef>
 #include <cstdio>
 #include <cuda_runtime.h>
+#include <device_types.h>
 #include <iostream>
+#include <vector_types.h>
 
 // TODO: Delete this and make functions templates
 #define TILE_X 16
@@ -292,8 +294,111 @@ __global__ void sgemm_v5(const float *a, float alpha, const float *b, float beta
   for (int gn = 0; gn < WTGN; ++gn) {
     for (int gm = 0; gm < WTGM; ++gm) {
       float *warp_c = &CTile[(gm * WTM) * N + (gn * WTN)];
-      for (int tn = 0; tn < TN; ++tn) {
+      for (int tm = 0; tm < TM; ++tm) {
+        for (int tn = 0; tn < TN; ++tn) {
+          warp_c[(lane_row * TM + tm) * N + (lane_col * TN + tn)] = accumulator[gm * TM + tm][gn * TN + tn];
+        }
+      }
+    }
+  }
+}
+
+// __device__ __forceinline__ float4 read_float4(float *p) {
+//   return reinterpret_cast<float4>(&(p[0]));
+// }
+
+__device__ __forceinline__ void write_float4(float *p, const float *value) {
+  reinterpret_cast<float4 *>(p)[0] = reinterpret_cast<const float4 *>(value)[0];
+}
+
+template<int BM, int BN, int BK, int WM, int WN, int TM, int TN, int WTGM, int WTGN, int num_threads_x = 16, int num_threads_y = 8>
+__global__ void sgemm_v6(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
+  __shared__ float ATile[BK][BM];
+  __shared__ float BTile[BK][BN];
+
+  constexpr int BN4 = BN / 4;
+  constexpr int BK4 = BK / 4;
+  constexpr int WTM = WM / WTGM;
+  constexpr int WTN = WN / WTGN;
+  constexpr int WTN4 = WTN / 4;
+
+  int block_x = blockIdx.x;
+  int block_y = blockIdx.y;
+
+  int tid_x = threadIdx.x;
+  int tid_y = threadIdx.y;
+  int tid = (tid_y * blockDim.x + tid_x);
+
+  int warp_id = tid / WARP_SIZE;
+  int warp_row = warp_id / (BN / WN);
+  int warp_col = warp_id % (BN / WN);
+
+  int lane_id = tid % WARP_SIZE;
+  int lane_row = lane_id / (WTN / TN);
+  int lane_col = lane_id % (WTN / TN);
+
+  float accumulator[TM * WTGM][TN * WTGN] = {0.0};
+  float a_frag[TM * WTGM];
+  float b_frag[TN * WTGN];
+
+  int ldAM = BM / blockDim.y;
+  int ldAK = BK4 / blockDim.x;
+
+  int ldBK = BK / blockDim.y;
+  int ldBN = BN4 / blockDim.x;
+
+  for (int step = 0; step < K / BK; ++step) {
+    const float *tile_a = &a[(block_y * BM) * K + (step * BK)];
+    const float *tile_b = &b[(step * BK) * N + (block_x * BN)];
+
+    for (int ldak = 0; ldak < ldAK; ++ldak) {
+      for (int ldam = 0; ldam < ldAM; ++ldam) {
+        write_float4(&ATile[ldak * blockDim.x + tid_x][ldam * blockDim.y + tid_y + 4], &tile_a[(ldam * blockDim.y + tid_y) * K + (ldak * blockDim.x + tid_x + 4)]);
+      }
+    }
+
+    for (int ldbn = 0; ldbn < ldBN; ++ldbn) {
+      for (int ldbk = 0; ldbk < ldBK; ++ldbk) {
+        write_float4(&BTile[(ldbk * blockDim.y) + tid_y][(ldbn * blockDim.x) + tid_x + 4], &tile_b[(ldbk * blockDim.y + tid_y) * N + (ldbn * blockDim.x + tid_x + 4)]);
+      }
+    }
+
+    __syncthreads();
+
+    for (int k = 0; k < BK; ++k) {
+      for (int gm = 0; gm < WTGM; ++gm) {
         for (int tm = 0; tm < TM; ++tm) {
+          a_frag[gm * TM + tm] = ATile[k][(warp_row * WM) + (gm * WTM) + (lane_row * TM) + tm];
+        }
+      }
+
+      for (int gn = 0; gn < WTGN; ++gn) {
+        for (int tn = 0; tn < TN; ++tn) {
+          b_frag[gn * TN + tn] = BTile[k][(warp_col * WN) + (gn * WTN) + (lane_col * TN) + tn];
+        }
+      }
+
+      for (int gm = 0; gm < WTGM; ++gm) {
+        for (int gn = 0; gn < WTGN; ++gn) {
+          for (int tm = 0; tm < TM; ++tm) {
+            for (int tn = 0; tn < TN; ++tn) {
+              accumulator[gm * TM + tm][gn * TN + tn] += a_frag[gm * TM + tm] * b_frag[gn * TN + tn];
+            }
+          }
+        }
+      }
+    }
+
+    __syncthreads();
+  }
+
+  float *CTile = &c[(block_y * BM + warp_row * WM) * N + (block_x * BN + warp_col * WN)];
+
+  for (int gn = 0; gn < WTGN; ++gn) {
+    for (int gm = 0; gm < WTGM; ++gm) {
+      float *warp_c = &CTile[(gm * WTM) * N + (gn * WTN)];
+      for (int tm = 0; tm < TM; ++tm) {
+        for (int tn = 0; tn < TN; ++tn) {
           warp_c[(lane_row * TM + tm) * N + (lane_col * TN + tn)] = accumulator[gm * TM + tm][gn * TN + tn];
         }
       }
@@ -339,11 +444,27 @@ void launch_sgemm_v5(const float *a, float alpha, const float *b, float beta, fl
   constexpr int TN = 4;
   constexpr int WTGM = 2;
   constexpr int WTGN = 2;
-  constexpr int WTM = WM / WTGM;
-  constexpr int WTN = WN / WTGN;
 
   dim3 grid_dim(ceil_div(N, BN), ceil_div(M, BM));
   dim3 block_dim(num_threads_x, num_threads_y);
   kernel::sgemm_v5<BM, BN, BK, WM, WN, TM, TN, WTGM, WTGN, num_threads_x, num_threads_y><<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
+}
+
+void launch_sgemm_v6(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
+  constexpr int num_threads_y = 8;
+  constexpr int num_threads_x = 16;
+  constexpr int BM = 64;
+  constexpr int BN = 128;
+  constexpr int BK = 64;
+  constexpr int WM = 32;
+  constexpr int WN = 64;
+  constexpr int TM = 4;
+  constexpr int TN = 4;
+  constexpr int WTGM = 2;
+  constexpr int WTGN = 2;
+
+  dim3 grid_dim(ceil_div(N, BN), ceil_div(M, BM));
+  dim3 block_dim(num_threads_x, num_threads_y);
+  kernel::sgemm_v6<BM, BN, BK, WM, WN, TM, TN, WTGM, WTGN, num_threads_x, num_threads_y><<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
 }// namespace ml::operators::cuda
