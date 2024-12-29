@@ -324,7 +324,6 @@ __global__ void sgemm_v6(const float *a, float alpha, const float *b, float beta
   constexpr int BK4 = BK / 4;
   constexpr int WTM = WM / WTGM;
   constexpr int WTN = WN / WTGN;
-  constexpr int WTN4 = WTN / 4;
   constexpr int num_threads = num_threads_x * num_threads_y;
 
   int block_x = blockIdx.x;
@@ -346,13 +345,13 @@ __global__ void sgemm_v6(const float *a, float alpha, const float *b, float beta
   float a_frag[TM * WTGM];
   float b_frag[TN * WTGN];
 
-  int ldA_row = tid / BK4;
-  int ldA_col = tid % BK4 * 4;
-  int ldA_stride = num_threads / BK4;
+  const int ldA_row = tid / BK4;
+  const int ldA_col = tid % BK4 * 4;
+  const int ldA_stride = num_threads / BK4;
 
-  int ldB_row = tid / BN4;
-  int ldB_col = tid % BN4 * 4;
-  int ldB_stride = num_threads / BN4;
+  const int ldB_row = tid / BN4;
+  const int ldB_col = tid % BN4 * 4;
+  const int ldB_stride = num_threads / BN4;
 
   for (int step = 0; step < K / BK; ++step) {
     const float *tile_a = &a[(block_y * BM) * K + (step * BK)];
@@ -360,10 +359,10 @@ __global__ void sgemm_v6(const float *a, float alpha, const float *b, float beta
 
     for (int offset = 0; offset < BM; offset += ldA_stride) {
       const float4 tmp = read_float4(&tile_a[(ldA_row + offset) * K + ldA_col]);
-      ATile[ldA_col][ldA_row + offset] = tmp.w;
-      ATile[ldA_col + 1][ldA_row + offset] = tmp.x;
-      ATile[ldA_col + 2][ldA_row + offset] = tmp.y;
-      ATile[ldA_col + 3][ldA_row + offset] = tmp.z;
+      ATile[ldA_col + 0][ldA_row + offset] = tmp.x;
+      ATile[ldA_col + 1][ldA_row + offset] = tmp.y;
+      ATile[ldA_col + 2][ldA_row + offset] = tmp.z;
+      ATile[ldA_col + 3][ldA_row + offset] = tmp.w;
     }
 
     for (int offset = 0; offset < BK; offset += ldB_stride) {
@@ -461,14 +460,26 @@ void launch_sgemm_v6(const float *a, float alpha, const float *b, float beta, fl
   constexpr int num_threads_y = 8;
   constexpr int num_threads_x = 16;
   constexpr int BM = 64;
-  constexpr int BN = 128;
-  constexpr int BK = 64;
+  constexpr int BN = 64;
+  constexpr int BK = 8;
   constexpr int WM = 32;
-  constexpr int WN = 64;
-  constexpr int TM = 4;
+  constexpr int WN = 32;
+  constexpr int TM = 8;
   constexpr int TN = 4;
-  constexpr int WTGM = 2;
-  constexpr int WTGN = 2;
+  constexpr int WTGM = 1;
+  constexpr int WTGN = 1;
+
+  // constexpr int num_threads_y = 8;
+  // constexpr int num_threads_x = 16;
+  // constexpr int BM = 64;
+  // constexpr int BN = 64;
+  // constexpr int BK = 16;
+  // constexpr int WM = 32;
+  // constexpr int WN = 32;
+  // constexpr int TM = 4;
+  // constexpr int TN = 4;
+  // constexpr int WTGM = 2;
+  // constexpr int WTGN = 1;
 
   dim3 grid_dim(ceil_div(N, BN), ceil_div(M, BM));
   dim3 block_dim(num_threads_x, num_threads_y);
