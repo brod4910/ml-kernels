@@ -7,16 +7,14 @@
 #include <iostream>
 #include <vector_types.h>
 
+#include <mlkl/cuda/device/utils.h>
+
 // TODO: Delete this and make functions templates
 #define TILE_X 16
 #define TILE_Y 16
 #define WARP_SIZE 32
 
 namespace ml::operators::cuda {
-int ceil_div(int a, int b) {
-  return (a + b - 1) / b;
-}
-
 namespace kernel {
 // naive
 __global__ void sgemm_v1(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
