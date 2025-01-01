@@ -9,7 +9,7 @@ void softmax(const float *__restrict__ input, float *__restrict__ output, int di
   float norm_factor = 0.f;
 
   for (int i = 0; i < shape[dim]; ++i) {
-    float new_max = std::max(input[i], curr_max);
+    float new_max = std::fmax(input[i], curr_max);
     float correction = std::exp(curr_max - new_max);
 
     norm_factor = (norm_factor * correction) + std::exp(input[i] - new_max);
