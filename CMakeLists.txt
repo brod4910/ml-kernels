@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.21)
-include(CheckLanguage)
 
 project(
         ml_kernels
@@ -40,59 +39,39 @@ endif()
 
 # ---- CUDA Build  ----
 
-# Define options
-option(BUILD_CUDA "Enable CUDA support" OFF)
-option(CUDA_ARCH "CUDA architecture" "86")
+if(${BUILD_CUDA})
+    set(CUDA_LIB_NAME ${PROJECT_NAME}_cuda)
+    option(CUDA_ARCH "CUDA architecture" "86")
+    # Find CUDA package and include directories
+    enable_language(CUDA)
+    find_package(CUDAToolkit)
 
-if (${BUILD_CUDA})
-    # Check if CUDA language is supported
-    check_language(CUDA)
-    if (CMAKE_CUDA_COMPILER)
-        message(STATUS "CUDA language is supported.")
+    # Specify the CUDA compute capability
+    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode=arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH})  # Change the compute capability as needed
 
-        # Find CUDA Toolkit
-        find_package(CUDAToolkit REQUIRED)
+    # Add the CUDA sources to the project
+    file(GLOB_RECURSE CU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/cuda/*.cpp)
+    file(GLOB_RECURSE CUDA_SRC_FILES ${PROJECT_SOURCE_DIR}/src/cuda/*.cu)
+    file(GLOB_RECURSE CU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cuda/*.h)
+    file(GLOB_RECURSE CUDA_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cuda/*.cuh)
+    add_library(${CUDA_LIB_NAME} SHARED ${CU_SRC_FILES} ${CU_HDR_FILES} ${CUDA_SRC_FILES} ${CUDA_HDR_FILES})
+    set_property(TARGET ${CUDA_LIB_NAME} PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH})
+    target_link_libraries(${CUDA_LIB_NAME} PRIVATE ${PACKAGES} CUDA::cudart CUDA::cuda_driver)
+    set_target_properties(${CUDA_LIB_NAME} PROPERTIES LINKER_LANGUAGE CUDA)
+    
+    target_compile_options(${CUDA_LIB_NAME} PRIVATE 
+        $<$<COMPILE_LANGUAGE:CUDA>:
+            $<$<CONFIG:Debug>:-G -O0>
+            $<$<CONFIG:RelWithDebInfo>:-G -O2>
+            $<$<CONFIG:Release>:-O3 -lineinfo>
+        >
+    )
 
-        if (CUDAToolkit_FOUND)
-            message(STATUS "CUDA Toolkit is available on this machine.")
-
-            # Set CUDA library name
-            set(CUDA_LIB_NAME ${PROJECT_NAME}_cuda)
-
-            # Specify the CUDA compute capability
-            set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode=arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH})
-
-            # Add the CUDA sources to the project
-            file(GLOB_RECURSE CU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/cuda/*.cpp)
-            file(GLOB_RECURSE CUDA_SRC_FILES ${PROJECT_SOURCE_DIR}/src/cuda/*.cu)
-            file(GLOB_RECURSE CU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cuda/*.h)
-            file(GLOB_RECURSE CUDA_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cuda/*.cuh)
-            add_library(${CUDA_LIB_NAME} SHARED ${CU_SRC_FILES} ${CU_HDR_FILES} ${CUDA_SRC_FILES} ${CUDA_HDR_FILES})
-            set_property(TARGET ${CUDA_LIB_NAME} PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH})
-            target_link_libraries(${CUDA_LIB_NAME} PRIVATE ${PACKAGES} CUDA::cudart CUDA::cuda_driver)
-            set_target_properties(${CUDA_LIB_NAME} PROPERTIES LINKER_LANGUAGE CUDA)
-
-            # Set compile options
-            target_compile_options(${CUDA_LIB_NAME} PRIVATE 
-                $<$<COMPILE_LANGUAGE:CUDA>:
-                    $<$<CONFIG:Debug>:-G -O0>
-                    $<$<CONFIG:RelWithDebInfo>:-G -O2>
-                    $<$<CONFIG:Release>:-O3 -lineinfo>
-                >
-            )
-
-            # Include directories
-            target_include_directories(
-                ${CUDA_LIB_NAME}
-                PUBLIC
-                "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
-            )
-        else()
-            message(FATAL_ERROR "CUDA Toolkit is not available. Please install it or disable BUILD_CUDA.")
-        endif()
-    else()
-        message(WARNING "CUDA language is not supported on this system. CUDA support will be disabled.")
-    endif()
+    target_include_directories(
+            ${CUDA_LIB_NAME}
+            PUBLIC
+            "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+    )
 endif()
 
 # ---- CPU Build  ----
