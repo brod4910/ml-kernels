@@ -35,7 +35,7 @@ __global__ void softmax_2d_v1(float *input, float *output, int batch_size, int d
 }// namespace kernel
 
 void launch_softmax_2d_v1(float *input, float *output, int dim, int *shape) {
-  constexpr NUM_THREADS = 16;
+  constexpr int NUM_THREADS = 16;
   int batch_size = shape[0];
   int dim_size = shape[dim];
 
