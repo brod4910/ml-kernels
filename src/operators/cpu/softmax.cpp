@@ -1,9 +1,9 @@
 #include <cmath>
 #include <limits>
 
-#include <mlkl/cpu/operators/softmax.h>
+#include <mlkl/operators/cpu/softmax.h>
 
-namespace ml::operators::cpu {
+namespace mlkl::operators::cpu {
 void softmax(const float *__restrict__ input, float *__restrict__ output, int dim, std::vector<int> &shape) {
   float curr_max = -std::numeric_limits<float>::infinity();
   float norm_factor = 0.f;
@@ -20,4 +20,4 @@ void softmax(const float *__restrict__ input, float *__restrict__ output, int di
     output[i] = std::exp(input[i] - curr_max) / norm_factor;
   }
 }
-}// namespace ml::operators::cpu
+}// namespace mlkl::operators::cpu

@@ -1,20 +1,18 @@
-
 #pragma once
 #include <cstddef>
 #include <cstdio>
 #include <cuda_runtime.h>
 #include <device_types.h>
-#include <iostream>
 #include <vector_types.h>
 
-#include <mlkl/cuda/device/utils.h>
+#include <mlkl/cuda/utils/device.h>
 
 // TODO: Delete this and make functions templates
 #define TILE_X 16
 #define TILE_Y 16
 #define WARP_SIZE 32
 
-namespace ml::operators::cuda {
+namespace mlkl::operators::cuda {
 namespace kernel {
 // naive
 __global__ void sgemm_v1(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
@@ -412,26 +410,26 @@ __global__ void sgemm_v6(const float *a, float alpha, const float *b, float beta
 }// namespace kernel
 
 void launch_sgemm_v1(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
-  dim3 grid_dim(ceil_div(M, TILE_X), ceil_div(N, TILE_Y));
+  dim3 grid_dim(utils::ceil_div(M, TILE_X), utils::ceil_div(N, TILE_Y));
   dim3 block_dim(TILE_X, TILE_Y);
 
   kernel::sgemm_v1<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
 
 void launch_sgemm_v2(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
-  dim3 grid_dim(ceil_div(M, TILE_X), ceil_div(N, TILE_Y));
+  dim3 grid_dim(utils::ceil_div(M, TILE_X), utils::ceil_div(N, TILE_Y));
   dim3 block_dim(TILE_X, TILE_Y);
   kernel::sgemm_v2<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
 
 void launch_sgemm_v3(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
-  dim3 grid_dim(ceil_div(M, TILE_X), ceil_div(N, TILE_Y));
+  dim3 grid_dim(utils::ceil_div(M, TILE_X), utils::ceil_div(N, TILE_Y));
   dim3 block_dim(TILE_X, TILE_Y);
   kernel::sgemm_v3<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
 
 void launch_sgemm_v4(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
-  dim3 grid_dim(ceil_div(M, BLOCK_TILE_X), ceil_div(N, BLOCK_TILE_Y));
+  dim3 grid_dim(utils::ceil_div(M, BLOCK_TILE_X), utils::ceil_div(N, BLOCK_TILE_Y));
   dim3 block_dim(BLOCK_TILE_X / NUM_TH_ITEMS_M, BLOCK_TILE_Y / NUM_TH_ITEMS_N);
   kernel::sgemm_v4<<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
@@ -449,7 +447,7 @@ void launch_sgemm_v5(const float *a, float alpha, const float *b, float beta, fl
   constexpr int WTGM = 2;
   constexpr int WTGN = 2;
 
-  dim3 grid_dim(ceil_div(N, BN), ceil_div(M, BM));
+  dim3 grid_dim(utils::ceil_div(N, BN), utils::ceil_div(M, BM));
   dim3 block_dim(num_threads_x, num_threads_y);
   kernel::sgemm_v5<BM, BN, BK, WM, WN, TM, TN, WTGM, WTGN, num_threads_x, num_threads_y><<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
@@ -479,8 +477,8 @@ void launch_sgemm_v6(const float *a, float alpha, const float *b, float beta, fl
   // constexpr int WTGM = 2;
   // constexpr int WTGN = 1;
 
-  dim3 grid_dim(ceil_div(N, BN), ceil_div(M, BM));
+  dim3 grid_dim(utils::ceil_div(N, BN), utils::ceil_div(M, BM));
   dim3 block_dim(num_threads_x, num_threads_y);
   kernel::sgemm_v6<BM, BN, BK, WM, WN, TM, TN, WTGM, WTGN, num_threads_x, num_threads_y><<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
-}// namespace ml::operators::cuda
+}// namespace mlkl::operators::cuda

@@ -40,7 +40,7 @@ void set_random_matrix(float *matrix, int M, int N) {
 void initialize_matrix_from_0_to_N(float *matrix, size_t M, size_t N) {
   for (size_t i = 0; i < M; ++i) {
     for (size_t j = 0; j < N; ++j) {
-      matrix[i * N + j] = static_cast<float>(i * N + j);
+      matrix[i * N + j] = static_cast<float>(j % 128);
     }
   }
 }
@@ -68,7 +68,7 @@ bool assert_correctness(float *matrix, float *ref_matrix, size_t M, size_t N, fl
       int linear = m * N + n;
       diff = fabs((double) matrix[linear] - (double) ref_matrix[linear]);
       if (diff > 1e-2) {
-        printf("Error: %5.2f,%5.2f, (%lu, %lu) \n", matrix[linear], ref_matrix[linear], m, n);
+        printf("Error: Output Matrix: %5.2f, Ref Matrix: %5.2f, (M, N): (%lu, %lu) \n", matrix[linear], ref_matrix[linear], m, n);
         return false;
       }
     }
@@ -99,9 +99,10 @@ void test_kernel(const char *kernel_name,
 
   set_random_matrix(a, M, K);
   set_random_matrix(b, K, N);
+  // initialize_matrix_from_0_to_N(a, M, K);
+  // initialize_matrix_from_0_to_N(b, K, N);
   fill_matrix(c, M, N, 0);
   fill_matrix(ref_matrix, M, N, 0);
-
   ml::operators::cpu::sgemm(a, alpha, b, beta, ref_matrix, M, N, K);
 
   auto *a_d = initialize_cuda_matrix(a, M * K);
@@ -113,6 +114,9 @@ void test_kernel(const char *kernel_name,
   cudaEventCreate(&stop);
 
   float total_duration = 0;
+
+  // std::cout << "Ref Matrix: " << std::endl;
+  // print_matrix(ref_matrix, M, N);
 
   // warm-up
   for (int i = 0; i < 10; ++i) {
@@ -141,18 +145,21 @@ void test_kernel(const char *kernel_name,
   cudaMemcpy(c, c_d, M * N * sizeof(float), cudaMemcpyDeviceToHost);
   CHECK_CUDA_ERROR();
 
+  // std::cout << "Output Matrix: " << std::endl;
+  // print_matrix(c, M, N);
+
   bool correct = assert_correctness(c, ref_matrix, M, N);
   if (!correct) {
     std::cerr << "Kernel " << kernel_name << " produced incorrect results." << std::endl;
-  } else {
-    float average_duration = total_duration / num_runs;
-    float gflops = (2.0f * M * N * K) / (average_duration / 1000.0f) / 1e9;
-
-    std::cout << "Kernel: " << kernel_name << " | "
-              << "Size: " << M << "x" << K << "x" << N << " | "
-              << "Time: " << average_duration << " ms | "
-              << "GFLOPS: " << gflops << std::endl;
   }
+
+  float average_duration = total_duration / num_runs;
+  float gflops = (2.0f * M * N * K) / (average_duration / 1000.0f) / 1e9;
+
+  std::cout << "Kernel: " << kernel_name << " | "
+            << "Size: " << M << "x" << K << "x" << N << " | "
+            << "Time: " << average_duration << " ms | "
+            << "GFLOPS: " << gflops << std::endl;
 
   // std::cout << "matrix: \n";
   // print_matrix(c, M, N);
@@ -174,7 +181,7 @@ void test_kernel(const char *kernel_name,
 void sgemm_cuda(int M, int N, int K, float alpha, float beta) {
   cublasHandle_t handle;
   cublasCreate(&handle);
-  int num_runs = 100;
+  int num_runs = 1000;
 
   auto cublas_kernel = [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) {
     CHECK_CUBLAS_STATUS(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha, b, N, a, K, &beta, c, N));
@@ -183,10 +190,11 @@ void sgemm_cuda(int M, int N, int K, float alpha, float beta) {
   test_kernel("CUBLAS", cublas_kernel, M, N, K, alpha, beta, num_runs);
 
   // Test custom kernels
-  test_kernel("Custom Kernel V2", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v2(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
-  test_kernel("Custom Kernel V3", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v3(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
-  test_kernel("Custom Kernel V4", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v4(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
-  test_kernel("Custom Kernel V5", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { ml::operators::cuda::launch_sgemm_v5(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
+  test_kernel("SGEMM Kernel V2", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { mlkl::operators::cuda::launch_sgemm_v2(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
+  test_kernel("SGEMM Kernel V3", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { mlkl::operators::cuda::launch_sgemm_v3(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
+  test_kernel("SGEMM Kernel V4", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { mlkl::operators::cuda::launch_sgemm_v4(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
+  test_kernel("SGEMM Kernel V5", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { mlkl::operators::cuda::launch_sgemm_v5(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
+  test_kernel("SGEMM Kernel V6", [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) { mlkl::operators::cuda::launch_sgemm_v6(a, alpha, b, beta, c, M, N, K); }, M, N, K, alpha, beta, num_runs);
 
   cublasDestroy(handle);
 }

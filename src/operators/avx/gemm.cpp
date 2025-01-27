@@ -2,7 +2,7 @@
 // Created by Brian Rodriguez on 10/20/23.
 //
 #include <immintrin.h>
-#include <mlkl/avx/operators/gemm.h>
+#include <mlkl/operators/avx/gemm.h>
 
 namespace ml::operators::avx {
 void inline sgemm_8x8(const float *__restrict__ a,

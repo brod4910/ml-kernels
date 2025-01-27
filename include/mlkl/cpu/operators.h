@@ -3,6 +3,6 @@
 //
 #pragma once
 
-#include <mlkl/cpu/operators/gemm.h>
-#include <mlkl/cpu/operators/softmax.h>
-#include <mlkl/cpu/operators/transpose.h>
+#include <mlkl/operators/cpu/gemm.h>
+#include <mlkl/operators/cpu/softmax.h>
+#include <mlkl/operators/cpu/transpose.h>
