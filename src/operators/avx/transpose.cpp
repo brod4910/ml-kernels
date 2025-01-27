@@ -3,7 +3,7 @@
 //
 
 #include <immintrin.h>
-#include <mlkl/avx/operators/transpose.h>
+#include <mlkl/operators/avx/transpose.h>
 
 namespace ml::operators::avx {
 void inline transpose_8x8(const float *a, float *b, size_t M, size_t N) {
@@ -75,4 +75,4 @@ void transpose(const float *__restrict__ a, float *__restrict__ b, size_t M, siz
     }
   }
 }
-}
+}// namespace ml::operators::avx

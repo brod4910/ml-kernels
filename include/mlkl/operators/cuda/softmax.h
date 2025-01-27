@@ -3,10 +3,11 @@
 #include <cstdio>
 #include <cuda_runtime.h>
 #include <device_types.h>
-#include <iostream>
-#include <vector_types.h>
+#include <vector>
 
-namespace ml::operators::cuda {
+#include <mlkl/cuda/utils/device.h>
+
+namespace mlkl::cuda::operators {
 namespace kernel {
 template<int NUM_THREADS>
 __global__ void softmax_2d_v1(float *input, float *output, int batch_size, int dim_size) {
@@ -34,14 +35,14 @@ __global__ void softmax_2d_v1(float *input, float *output, int batch_size, int d
 }
 }// namespace kernel
 
-void launch_softmax_2d_v1(float *input, float *output, int dim, int *shape) {
+void launch_softmax_2d_v1(float *input, float *output, int dim, std::vector<int> &shape) {
   constexpr int NUM_THREADS = 16;
   int batch_size = shape[0];
   int dim_size = shape[dim];
 
-  dim3 grid_dim(ceil_div(dim_size, 16));
+  dim3 grid_dim(utils::ceil_div(dim_size, 16));
   dim3 block_dim(NUM_THREADS);
 
   kernel::softmax_2d_v1<NUM_THREADS><<<grid_dim, block_dim>>>(input, output, batch_size, dim_size);
 }
-}// namespace ml::operators::cuda
+}// namespace mlkl::cuda::operators

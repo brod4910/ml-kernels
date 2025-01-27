@@ -28,9 +28,9 @@ int main() {
 
   float alpha = 1.0;
   float beta = 0.0;
-  for (const auto [M, N, K] : matrix_sizes) {
-//   std::cout << "CPU" << std::endl;
-//   sgemm_cpu(M, N, K, alpha, beta);
+  for (const auto &[M, N, K] : matrix_sizes) {
+    std::cout << "CPU" << std::endl;
+    sgemm_cpu(M, N, K, alpha, beta);
 #ifdef __AVX2__
     std::cout << "AVX2" << std::endl;
     sgemm_avx(M, N, K, alpha, beta);

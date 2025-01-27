@@ -74,8 +74,8 @@
  * [ 6 14 22 30 38 46 54 62] t6
  * [ 7 15 23 31 39 47 55 63] t7
  */
-namespace ml::operators::avx {
+namespace mlkl::operators::avx {
 
-void transpose(const float *__restrict__ a, float * __restrict__ b, size_t M, size_t N);
+void transpose(const float *__restrict__ a, float *__restrict__ b, size_t M, size_t N);
 
-}// namespace ml::operators::avx
+}// namespace mlkl::operators::avx
