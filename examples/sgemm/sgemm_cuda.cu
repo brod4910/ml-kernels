@@ -1,5 +1,4 @@
-#include "mlkl/cpu/operators/gemm.h"
-#include "mlkl/cuda/operators/gemm.h"
+#include <mlkl/mlkl.h>
 
 #include <cassert>
 #include <cublas_v2.h>
@@ -9,71 +8,12 @@
 #include <iostream>
 #include <random>
 
-#define CHECK_CUDA_ERROR() check_cuda_error(__FILE__, __LINE__)
-void check_cuda_error(const char *file, int line) {
-  cudaError_t error = cudaGetLastError();
-  if (error != cudaSuccess) {
-    std::cerr << "CUDA error at " << file << ":" << line
-              << " code=" << static_cast<unsigned int>(error) << " \""
-              << cudaGetErrorString(error) << "\"" << std::endl;
-    exit(-1);
-  }
-}
-
 #define CHECK_CUBLAS_STATUS(val) checkCuBLASStatus((val), #val, __FILE__, __LINE__)
 void checkCuBLASStatus(cublasStatus_t status, const char *const func, const char *const file, const int line) {
   if (status != CUBLAS_STATUS_SUCCESS) {
     std::cerr << "CUBLAS Error at : " << file << ":" << line << '\n';
     std::cerr << cublasGetStatusString(status) << " " << func << '\n';
   }
-}
-
-void set_random_matrix(float *matrix, int M, int N) {
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_real_distribution<float> dist(0.0f, 1.0f);
-  for (int i = 0; i < M * N; ++i) {
-    matrix[i] = dist(gen);
-  }
-}
-
-void initialize_matrix_from_0_to_N(float *matrix, size_t M, size_t N) {
-  for (size_t i = 0; i < M; ++i) {
-    for (size_t j = 0; j < N; ++j) {
-      matrix[i * N + j] = static_cast<float>(j % 128);
-    }
-  }
-}
-
-void fill_matrix(float *matrix, int M, int N, float value) {
-  for (int i = 0; i < M * N; ++i) {
-    matrix[i] = value;
-  }
-}
-
-float *initialize_cuda_matrix(float *matrix, size_t size) {
-  float *d_matrix;
-  cudaMalloc(&d_matrix, size * sizeof(float));
-  if (matrix != nullptr) {
-    cudaMemcpy(d_matrix, matrix, size * sizeof(float), cudaMemcpyHostToDevice);
-  }
-  return d_matrix;
-}
-
-bool assert_correctness(float *matrix, float *ref_matrix, size_t M, size_t N, float epsilon = 1e-6) {
-  double diff = 0.;
-
-  for (size_t m = 0; m < M; ++m) {
-    for (size_t n = 0; n < N; ++n) {
-      int linear = m * N + n;
-      diff = fabs((double) matrix[linear] - (double) ref_matrix[linear]);
-      if (diff > 1e-2) {
-        printf("Error: Output Matrix: %5.2f, Ref Matrix: %5.2f, (M, N): (%lu, %lu) \n", matrix[linear], ref_matrix[linear], m, n);
-        return false;
-      }
-    }
-  }
-  return true;
 }
 
 void print_matrix(const float *matrix, size_t M, size_t N) {
@@ -92,6 +32,17 @@ template<typename Kernel>
 void test_kernel(const char *kernel_name,
                  Kernel kernel,
                  int M, int N, int K, float alpha, float beta, int num_runs = 10) {
+  auto cpu_allocator = mlkl::TensorAllocator<float>(mlkl::CPU);
+  auto gpu_allocator = mlkl::TensorAllocator<float>(mlkl::GPU);
+
+  std::vector<int> s1{M, K};
+  std::vector<int> s2{K, N};
+  std::vector<int> s3{M, N};
+
+  auto a = gpu_allocator.create_tensor(s1.data);
+  auto b = gpu_allocator.create_tensor(s2.data);
+  auto c = gpu_allocator.create_tensor(s3.data);
+
   auto *a = new float[M * K];
   auto *b = new float[K * N];
   auto *c = new float[M * N];
@@ -99,8 +50,7 @@ void test_kernel(const char *kernel_name,
 
   set_random_matrix(a, M, K);
   set_random_matrix(b, K, N);
-  // initialize_matrix_from_0_to_N(a, M, K);
-  // initialize_matrix_from_0_to_N(b, K, N);
+
   fill_matrix(c, M, N, 0);
   fill_matrix(ref_matrix, M, N, 0);
   ml::operators::cpu::sgemm(a, alpha, b, beta, ref_matrix, M, N, K);

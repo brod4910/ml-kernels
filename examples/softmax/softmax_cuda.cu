@@ -1,5 +1,3 @@
-#include "mlkl/tensor/create.h"
-#include "mlkl/tensor/tensor.h"
 #include <mlkl/mlkl.h>
 
 #include <cassert>
@@ -11,12 +9,12 @@ template<typename Kernel>
 void test_kernel(const char *kernel_name,
                  Kernel kernel,
                  int M, int N, int num_runs = 10) {
+  std::vector<int>
+    shape{M, N};
   auto a = mlkl::create_tensor<float>(shape.data(), mlkl::CPU);
   auto b = mlkl::create_tensor<float>(shape.data(), mlkl::CPU);
   auto *ref_matrix = new float[M * N];
 
-  std::vector<int>
-    shape{M, N};
   mlkl::cpu::utils::set_random_matrix(a, M, N);
   mlkl::cpu::utils::set_random_matrix(b, M, N);
 
@@ -92,5 +90,5 @@ void softmax_cuda(int M, int N) {
   int num_runs = 1000;
 
   // Test custom kernels
-  test_kernel("Softmax Kernel V1", [&](float *a, float *b, int dim, std::vector<int> &shape) { ml::operators::cuda::launch_softmax_2d_v1(a, b, dim, shape); }, M, N, num_runs);
+  test_kernel("Softmax Kernel V1", [&](float *a, float *b, int dim, std::vector<int> &shape) { mlkl::operators::cuda::launch_softmax_2d_v1(a, b, dim, shape); }, M, N, num_runs);
 }

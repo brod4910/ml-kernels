@@ -1,7 +1,7 @@
 #pragma once
-#include <mlkl/operators/cpu/create.h>
 #include <mlkl/operators/cpu/gemm.h>
 #include <mlkl/operators/cpu/softmax.h>
+#include <mlkl/operators/cpu/tensor.h>
 #include <mlkl/operators/cpu/transpose.h>
 
 #ifdef __AVX__
@@ -10,7 +10,7 @@
 #endif
 
 #ifdef __CUDA__
-#include <mlkl/operators/cuda/create.h>
 #include <mlkl/operators/cuda/gemm.h>
 #include <mlkl/operators/cuda/softmax.h>
+#include <mlkl/operators/cuda/tensor.h>
 #endif

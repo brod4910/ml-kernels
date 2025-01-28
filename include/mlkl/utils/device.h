@@ -1,11 +1,14 @@
 #pragma once
 
+#ifdef __CUDA__
+#include <cuda_runtime_api.h>
+#include <iostream>
+#endif
+
 #define CHECK_CUDA_ERROR() mlkl::utils::check_cuda_error(__FILE__, __LINE__)
 
 namespace mlkl::utils {
-#ifndef __CUDA__
-void check_cuda_error(const char *file, int line) {}
-#else
+#ifdef __CUDA__
 void check_cuda_error(const char *file, int line) {
   cudaError_t error = cudaGetLastError();
   if (error != cudaSuccess) {
@@ -15,5 +18,7 @@ void check_cuda_error(const char *file, int line) {
     exit(-1);
   }
 }
+#else
+void check_cuda_error(const char *file, int line) {}
 #endif
 }// namespace mlkl::utils

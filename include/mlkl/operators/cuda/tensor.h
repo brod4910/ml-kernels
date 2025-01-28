@@ -4,34 +4,23 @@
 #include <iterator>
 #include <numeric>
 
-#include <mlkl/tensor/tensor.h>
+#include <mlkl/core/tensor.h>
 #include <mlkl/utils/device.h>
 
 #include <cuda_runtime_api.h>
 #include <curand.h>
 
 namespace mlkl::operators::cuda {
-template<typename T>
-size_t num_bytes(Tensor<T> &tensor) {
-  return std::accumulate(std::begin(tensor.shape), std::end(tensor.shape), 1, std::multiplies<int>()) * sizeof(T);
-}
+namespace kernel {
+}// namespace kernel
 
 template<typename T>
-void calculate_stride(Tensor<T> &tensor) {
-  int stride = 1;
-  for (int i = tensor.rank - 1; i > 0; --i) {
-    tensor.stride[i] = stride;
-    stride *= tensor.shape[i];
-  }
-}
-
-template<typename T>
-Tensor<T> create_tensor(int *shapeArray) {
+Tensor<T> create_tensor(int *shape) {
   // Zero‐initialize the Tensor
   Tensor<T> tensor{};
 
   int rank = 0;
-  while (shapeArray[rank] != 0) {
+  while (shape[rank] != 0) {
     ++rank;
   }
   tensor.rank = rank;
@@ -40,7 +29,7 @@ Tensor<T> create_tensor(int *shapeArray) {
   tensor.stride = new int[rank];
 
   for (int i = 0; i < rank; ++i) {
-    tensor.shape[i] = shapeArray[i];
+    tensor.shape[i] = shape[i];
   }
 
   calculate_stride(tensor);
@@ -52,7 +41,7 @@ Tensor<T> create_tensor(int *shapeArray) {
 }
 
 template<typename T>
-void fill_tensor(Tensor<T> &tensor, T value) {
+void fill_tensor(Tensor<T> &tensor, int value) {
   cudaMemset(tensor.data, value, num_bytes<T>(tensor));
   CHECK_CUDA_ERROR();
 }
@@ -87,6 +76,12 @@ Tensor<T> randn(int *shape) {
 }
 
 template<typename T>
-Tensor<T> assert_correctness(Tensor<T> &tensor, Tensor<T> &ref, T epsilon = 1e-6) {
+void destroy(Tensor<T> &tensor) {
+  cudaFree(tensor.data);
+  delete tensor.shape;
+  delete tensor.stride;
 }
+
+// template<typename T>
+// Tensor<T> assert_correctness(Tensor<T> &tensor, Tensor<T> &ref, T epsilon = 1e-6);
 }// namespace mlkl::operators::cuda

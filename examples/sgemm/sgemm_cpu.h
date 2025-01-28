@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "mlkl/cpu/operators.h"
+#include <mlkl/operators/operators.h>
+
 #include <chrono>
 #include <iostream>
 #include <memory>
@@ -41,7 +42,7 @@ void sgemm_cpu(size_t M, size_t N, size_t K, float alpha, float beta) {
 
     auto start = std::chrono::high_resolution_clock::now();
     // ml::operators::cpu::transpose(b, b_T, M, N);
-    ml::operators::cpu::sgemm(a, alpha, b_T, beta, c, M, N, K);
+    mlkl::operators::cpu::sgemm(a, alpha, b_T, beta, c, M, N, K);
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     total_duration += duration.count();
