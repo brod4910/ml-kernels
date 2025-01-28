@@ -2,6 +2,14 @@
 // Created by Brian Rodriguez on 10/29/23.
 //
 
+#ifndef __AVX2__
+#include <stdexcept>
+
+namespace ml::operators::avx {
+void transpose(const float *__restrict__ a, float *__restrict__ b, size_t M, size_t N) {
+  throw std::runtime_error("AVX2 transpose not supported in this build.");
+}
+#else
 #include <immintrin.h>
 #include <mlkl/operators/avx/transpose.h>
 
@@ -75,4 +83,5 @@ void transpose(const float *__restrict__ a, float *__restrict__ b, size_t M, siz
     }
   }
 }
+#endif
 }// namespace ml::operators::avx

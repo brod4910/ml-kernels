@@ -44,15 +44,4 @@ bool assert_correctness(float *matrix, float *ref_matrix, size_t M, size_t N, fl
   return true;
 }
 
-void print_matrix(const float *matrix, size_t M, size_t N) {
-  const int width = 6;
-  for (size_t i = 0; i < M; ++i) {
-    std::cout << "[ ";
-    for (size_t j = 0; j < N; ++j) {
-      std::cout << std::setw(width) << matrix[i * N + j];
-      if (j < N - 1) std::cout << " ";
-    }
-    std::cout << " ]" << std::endl;
-  }
-}
 }// namespace mlkl::cpu::utils

@@ -1,47 +1,59 @@
 #pragma once
-
-#include <mlkl/core/tensor.h>
-
 #include <mlkl/operators/cpu/tensor.h>
 
 #ifdef __CUDA__
 #include <mlkl/operators/cuda/tensor.h>
+#else
+#include <stdexcept>
 #endif
+
+#include <mlkl/core/tensor.h>
+
+#include <vector>
 
 namespace mlkl {
-template<typename T>
-Tensor<T> create_tensor(int *shape, Device device) {
-  if (device == Device::CPU) {
-    return operators::cpu::create_tensor<T>(shape);
-  } else if (device == Device::CUDA) {
+mlkl::Tensor create_tensor(std::vector<int> &shape, Device device) {
+  if (device == mlkl::Device::CPU) {
+    return operators::cpu::create_tensor(shape);
+  } else if (device == mlkl::Device::CUDA) {
 #ifdef __CUDA__
-    return operators::cuda::create_tensor<T>(shape);
+    return operators::cuda::create_tensor(shape);
 #else
     throw std::runtime_error("GPU not supported in this build.");
 #endif
   }
 }
 
-template<typename T>
-void fill_tensor(Tensor<T> &tensor, int value, Device device) {
-  if (device == Device::CPU) {
-    return operators::cpu::fill_tensor<T>(tensor, value);
-  } else if (device == Device::CUDA) {
+void fill_tensor(mlkl::Tensor &tensor, int value, Device device) {
+  if (device == mlkl::Device::CPU) {
+    return operators::cpu::fill_tensor(tensor, value);
+  } else if (device == mlkl::Device::CUDA) {
 #ifdef __CUDA__
-    return operators::cuda::fill_tensor<T>(tensor, value);
+    return operators::cuda::fill_tensor(tensor, value);
 #else
     throw std::runtime_error("GPU not supported in this build.");
 #endif
   }
 }
 
-template<typename T>
-void destroy(Tensor<T> &tensor, Device device) {
+void destroy(mlkl::Tensor &tensor, Device device) {
+  if (device == mlkl::Device::CPU) {
+    return operators::cpu::destroy(tensor);
+  } else if (device == mlkl::Device::CUDA) {
+#ifdef __CUDA__
+    return operators::cuda::destroy(tensor);
+#else
+    throw std::runtime_error("GPU not supported in this build.");
+#endif
+  }
+}
+
+Tensor randn(std::vector<int> &shape, Device device) {
   if (device == Device::CPU) {
-    return operators::cpu::destroy<T>(tensor);
+    return operators::cpu::randn(shape);
   } else if (device == Device::CUDA) {
 #ifdef __CUDA__
-    return operators::cuda::destroy<T>(tensor);
+    return operators::cuda::randn(shape);
 #else
     throw std::runtime_error("GPU not supported in this build.");
 #endif

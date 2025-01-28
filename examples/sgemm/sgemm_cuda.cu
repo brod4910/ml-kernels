@@ -32,21 +32,21 @@ template<typename Kernel>
 void test_kernel(const char *kernel_name,
                  Kernel kernel,
                  int M, int N, int K, float alpha, float beta, int num_runs = 10) {
-  auto cpu_allocator = mlkl::TensorAllocator<float>(mlkl::CPU);
-  auto gpu_allocator = mlkl::TensorAllocator<float>(mlkl::GPU);
+  auto cpu_allocator = mlkl::TensorAllocator(mlkl::Device::CPU);
+  auto gpu_allocator = mlkl::TensorAllocator(mlkl::Device::CUDA);
 
   std::vector<int> s1{M, K};
   std::vector<int> s2{K, N};
   std::vector<int> s3{M, N};
 
-  auto a = gpu_allocator.create_tensor(s1.data);
-  auto b = gpu_allocator.create_tensor(s2.data);
-  auto c = gpu_allocator.create_tensor(s3.data);
+  auto a_d = gpu_allocator.randn(s1);
+  auto b_d = gpu_allocator.randn(s2);
+  auto c_d = gpu_allocator.empty(s3);
 
-  auto *a = new float[M * K];
-  auto *b = new float[K * N];
-  auto *c = new float[M * N];
-  auto *ref_matrix = new float[M * N];
+  auto a_cpu = cpu_allocator.empty(s1);
+  auto b_cpu = cpu_allocator.empty(s2);
+  auto c_cpu = cpu_allocator.empty(s3);
+  auto ref_matrix = cpu_allocator.empty(s3);
 
   set_random_matrix(a, M, K);
   set_random_matrix(b, K, N);
@@ -119,13 +119,6 @@ void test_kernel(const char *kernel_name,
   // Cleanup
   cudaEventDestroy(start);
   cudaEventDestroy(stop);
-  cudaFree(a_d);
-  cudaFree(b_d);
-  cudaFree(c_d);
-  delete[] a;
-  delete[] b;
-  delete[] c;
-  delete[] ref_matrix;
 }
 
 void sgemm_cuda(int M, int N, int K, float alpha, float beta) {
