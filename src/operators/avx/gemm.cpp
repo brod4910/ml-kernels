@@ -1,10 +1,22 @@
 //
 // Created by Brian Rodriguez on 10/20/23.
 //
+#ifndef __AVX2__
+#include <stdexcept>
+
+namespace mlkl::operators::avx {
+
+void sgemm(const float *__restrict__ a, const float alpha,
+           const float *__restrict__ b, const float beta, float *__restrict__ c,
+           size_t M, size_t N, size_t K) {
+  throw std::runtime_error("AVX2 sgemm not supported in this build.");
+}
+#else
 #include <immintrin.h>
 #include <mlkl/operators/avx/gemm.h>
 
-namespace ml::operators::avx {
+namespace mlkl::operators::avx {
+
 void inline sgemm_8x8(const float *__restrict__ a,
                       const float alpha,
                       const float *__restrict__ b,
@@ -67,4 +79,5 @@ void sgemm(const float *__restrict__ a, const float alpha,
     }
   }
 }
-}// namespace ml::operators::avx
+#endif
+}// namespace mlkl::operators::avx

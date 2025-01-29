@@ -20,13 +20,16 @@ find_package(fmt REQUIRED)
 #set(PACKAGES fmt::fmt spdlog::spdlog)
 set(PACKAGES fmt::fmt)
 
+file(GLOB_RECURSE CORE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/core/*.cpp)
+file(GLOB_RECURSE CORE_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/core/*.h)
+
 # ---- AVX Build  ----
 if(${BUILD_AVX})
     set(AVX_LIB_NAME ${PROJECT_NAME}_avx)
-    file(GLOB_RECURSE AVX_SRC_FILES ${PROJECT_SOURCE_DIR}/src/avx/*.cpp)
-    file(GLOB_RECURSE AVX_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/avx/*.h)
+    file(GLOB_RECURSE AVX_SRC_FILES ${PROJECT_SOURCE_DIR}/src/operators/avx/*.cpp)
+    file(GLOB_RECURSE AVX_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/operators/avx/*.h)
 
-    add_library(${AVX_LIB_NAME} SHARED ${AVX_SRC_FILES} ${AVX_HDR_FILES})
+    add_library(${AVX_LIB_NAME} SHARED ${AVX_SRC_FILES} ${AVX_HDR_FILES} ${CORE_SRC_FILES} ${CORE_HDR_FILES})
 
     target_compile_options(${AVX_LIB_NAME} PUBLIC -Wall -std=c++17 -O3 -mavx2 -mavx -march=native)
     target_link_libraries(${AVX_LIB_NAME} PRIVATE ${PACKAGES})
@@ -50,11 +53,11 @@ if(${BUILD_CUDA})
     set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode=arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH})  # Change the compute capability as needed
 
     # Add the CUDA sources to the project
-    file(GLOB_RECURSE CU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/cuda/*.cpp)
-    file(GLOB_RECURSE CUDA_SRC_FILES ${PROJECT_SOURCE_DIR}/src/cuda/*.cu)
-    file(GLOB_RECURSE CU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cuda/*.h)
-    file(GLOB_RECURSE CUDA_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cuda/*.cuh)
-    add_library(${CUDA_LIB_NAME} SHARED ${CU_SRC_FILES} ${CU_HDR_FILES} ${CUDA_SRC_FILES} ${CUDA_HDR_FILES})
+    file(GLOB_RECURSE CU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/operators/cuda/*.cpp)
+    file(GLOB_RECURSE CUDA_SRC_FILES ${PROJECT_SOURCE_DIR}/src/operators/cuda/*.cu)
+    file(GLOB_RECURSE CU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/operators/cuda/*.h)
+    file(GLOB_RECURSE CUDA_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/operators/cuda/*.cuh)
+    add_library(${CUDA_LIB_NAME} SHARED ${CU_SRC_FILES} ${CU_HDR_FILES} ${CUDA_SRC_FILES} ${CUDA_HDR_FILES} ${CORE_SRC_FILES} ${CORE_HDR_FILES})
     set_property(TARGET ${CUDA_LIB_NAME} PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH})
     target_link_libraries(${CUDA_LIB_NAME} PRIVATE ${PACKAGES} CUDA::cudart CUDA::cuda_driver)
     set_target_properties(${CUDA_LIB_NAME} PROPERTIES LINKER_LANGUAGE CUDA)
@@ -76,10 +79,10 @@ endif()
 
 # ---- CPU Build  ----
 set(CPU_LIB_NAME ${PROJECT_NAME}_cpu)
-file(GLOB_RECURSE CPU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/cpu/*.cpp)
-file(GLOB_RECURSE CPU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cpu/*.h)
+file(GLOB_RECURSE CPU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/operators/cpu/*.cpp)
+file(GLOB_RECURSE CPU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/operators/cpu/*.h)
 
-add_library(${CPU_LIB_NAME} SHARED ${CPU_SRC_FILES} ${CPU_HDR_FILES})
+add_library(${CPU_LIB_NAME} SHARED ${CPU_SRC_FILES} ${CPU_HDR_FILES} ${CORE_SRC_FILES} ${CORE_HDR_FILES})
 target_link_libraries(${CPU_LIB_NAME} PRIVATE ${PACKAGES})
 target_include_directories(
         ${CPU_LIB_NAME}
