@@ -12,7 +12,7 @@ struct TensorAllocator {
 
   ~TensorAllocator() {
     for (auto tensor : tensors_) {
-      destroy(tensor, device_);
+      mlkl::destroy(tensor, device_);
     }
   }
 

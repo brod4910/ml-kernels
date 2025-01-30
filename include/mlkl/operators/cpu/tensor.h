@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <random>
+#include <vector>
 
 #include <mlkl/core/tensor.h>
 
@@ -43,14 +44,24 @@ void destroy(Tensor &tensor) {
 Tensor randn(std::vector<int> &shape) {
   auto tensor = create_tensor(shape);
 
+  randn(tensor.data, mlkl::numel(tensor));
+
+  return tensor;
+}
+
+void randn(Tensor &tensor) {
+  randn(tensor.data, mlkl::numel(tensor));
+}
+
+namespace {
+void randn(float *data, size_t numel) {
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_real_distribution<float> dist(0.0f, 1.0f);
 
-  for (int i = 0; i < numel(tensor); ++i) {
-    tensor.data[i] = dist(gen);
+  for (int i = 0; i < numel; ++i) {
+    data[i] = dist(gen);
   }
-
-  return tensor;
 }
+}// namespace
 }// namespace mlkl::operators::cpu

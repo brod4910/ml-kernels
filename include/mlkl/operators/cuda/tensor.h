@@ -14,9 +14,9 @@ namespace mlkl::operators::cuda {
 namespace kernel {
 }// namespace kernel
 
-mlkl::Tensor create_tensor(std::vector<int> &shape) {
+Tensor create_tensor(std::vector<int> &shape) {
   // Zero‐initialize the Tensor
-  mlkl::Tensor tensor;
+  Tensor tensor;
 
   tensor.rank = shape.size();
 
@@ -35,12 +35,12 @@ mlkl::Tensor create_tensor(std::vector<int> &shape) {
   return tensor;
 }
 
-void fill_tensor(mlkl::Tensor &tensor, int value) {
+void fill_tensor(Tensor &tensor, int value) {
   cudaMemset(tensor.data, value, num_bytes(tensor));
   CHECK_CUDA_ERROR();
 }
 
-void copy(mlkl::Tensor &src, Device src_device, mlkl::Tensor &dst, Device dst_device) {
+void copy(Tensor &src, Device src_device, Tensor &dst, Device dst_device) {
   if (src_device == mlkl::Device::CUDA && dst_device == mlkl::Device::CPU) {
     cudaMemcpy(dst.data, src.data, num_bytes(src), cudaMemcpyDeviceToHost);
   } else if (src_device == mlkl::Device::CPU && dst_device == mlkl::Device::CUDA) {
@@ -56,23 +56,36 @@ void copy(mlkl::Tensor &src, Device src_device, mlkl::Tensor &dst, Device dst_de
 
 Tensor randn(std::vector<int> &shape) {
   auto tensor = create_tensor(shape);
-  curandGenerator_t prng;
-  curandCreateGenerator(&prng, CURAND_RNG_PSEUDO_MT19937);
 
-  curandSetPseudoRandomGeneratorSeed(prng, (unsigned long long) clock());
-
-  curandGenerateUniform(prng, tensor.data, mlkl::num_bytes(tensor));
-  curandDestroyGenerator(prng);
+  randn(tensor.data, mlkl::numel(tensor));
 
   CHECK_CUDA_ERROR();
 }
 
-void destroy(mlkl::Tensor &tensor) {
+void randn(Tensor &tensor) {
+  randn(tensor.data, mlkl::numel(tensor));
+}
+
+void destroy(Tensor &tensor) {
   cudaFree(tensor.data);
   delete tensor.shape;
   delete tensor.stride;
 }
 
+namespace {
+void randn(float *data, size_t numel) {
+  curandGenerator_t prng;
+  curandCreateGenerator(&prng, CURAND_RNG_PSEUDO_MT19937);
+
+  curandSetPseudoRandomGeneratorSeed(prng, (unsigned long long) clock());
+
+  curandGenerateUniform(prng, data, numel);
+  curandDestroyGenerator(prng);
+
+  CHECK_CUDA_ERROR();
+}
+}// namespace
+
 //
-// Tensor assert_correctness(mlkl::Tensor &tensor, mlkl::Tensor &ref, T epsilon = 1e-6);
+// Tensor assert_correctness(Tensor &tensor, Tensor &ref, T epsilon = 1e-6);
 }// namespace mlkl::operators::cuda
