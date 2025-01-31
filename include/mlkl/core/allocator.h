@@ -26,7 +26,8 @@ struct TensorAllocator {
     return mlkl::randn(shape, device_);
   }
 
-  Tensor copy(Tensor &tensor, Device device) {
-  }
+  // Tensor copy(Tensor &tensor, Device device) {
+
+  // }
 };
 }// namespace mlkl

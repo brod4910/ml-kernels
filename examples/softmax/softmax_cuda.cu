@@ -1,3 +1,4 @@
+#include "mlkl/core/tensor.h"
 #include <mlkl/mlkl.h>
 
 #include <cassert>
@@ -11,19 +12,18 @@ void test_kernel(const char *kernel_name,
                  int M, int N, int num_runs = 10) {
   std::vector<int>
     shape{M, N};
-  auto a = mlkl::create_tensor<float>(shape.data(), mlkl::CPU);
-  auto b = mlkl::create_tensor<float>(shape.data(), mlkl::CPU);
-  auto *ref_matrix = new float[M * N];
+  auto cpu_allocator = mlkl::TensorAllocator(mlkl::Device::CPU);
+  auto gpu_allocator = mlkl::TensorAllocator(mlkl::Device::CUDA);
 
-  mlkl::cpu::utils::set_random_matrix(a, M, N);
-  mlkl::cpu::utils::set_random_matrix(b, M, N);
+  std::vector<int> s1{M, N};
 
-  mlkl::cpu::utils::fill_matrix(b, M, N, 0);
-  mlkl::cpu::utils::fill_matrix(ref_matrix, M, N, 0);
-  ml::operators::cpu::softmax(a, b, 0, shape);
+  auto a_d = gpu_allocator.randn(s1);
+  auto b_d = gpu_allocator.randn(s1);
 
-  auto *a_d = initialize_cuda_matrix(a, M * M);
-  auto *b_d = initialize_cuda_matrix(b, M * N);
+  auto a_cpu = cpu_allocator.empty(s1);
+  auto b_cpu = cpu_allocator.empty(s1);
+
+  mlkl::softmax(a_cpu, b_cpu, 0, mlkl::Device::CPU);
 
   cudaEvent_t start, stop;
   cudaEventCreate(&start);

@@ -4,8 +4,9 @@
 
 #pragma once
 #include <cstddef>
+#include <mlkl/core/tensor.h>
 
 namespace mlkl::operators::cpu {
-void sgemm(const float *__restrict__ a, float alpha, const float *__restrict__ b, float beta, float *__restrict__ c, size_t M, size_t N, size_t K);
+void sgemm(Tensor &a, Tensor &b, Tensor &c, float alpha, float beta);
 
 }// namespace mlkl::operators::cpu

@@ -27,43 +27,31 @@ Tensor create_tensor(std::vector<int> &shape) {
     tensor.shape[i] = shape[i];
   }
 
-  calculate_stride(tensor);
+  tensor.calculate_stride();
 
-  cudaMalloc(&tensor.data, num_bytes(tensor));
+  cudaMalloc(&tensor.data, tensor.numel());
   CHECK_CUDA_ERROR();
 
   return tensor;
 }
 
-void fill_tensor(Tensor &tensor, int value) {
-  cudaMemset(tensor.data, value, num_bytes(tensor));
+void fill(Tensor &tensor, int value) {
+  cudaMemset(tensor.data, value, tensor.numel());
   CHECK_CUDA_ERROR();
 }
 
 void copy(Tensor &src, Device src_device, Tensor &dst, Device dst_device) {
   if (src_device == mlkl::Device::CUDA && dst_device == mlkl::Device::CPU) {
-    cudaMemcpy(dst.data, src.data, num_bytes(src), cudaMemcpyDeviceToHost);
+    cudaMemcpy(dst.data, src.data, src.numel(), cudaMemcpyDeviceToHost);
   } else if (src_device == mlkl::Device::CPU && dst_device == mlkl::Device::CUDA) {
-    cudaMemcpy(dst.data, src.data, num_bytes(src), cudaMemcpyHostToDevice);
+    cudaMemcpy(dst.data, src.data, src.numel(), cudaMemcpyHostToDevice);
   } else if (src_device == mlkl::Device::CUDA && dst_device == mlkl::Device::CUDA) {
-    cudaMemcpy(dst.data, src.data, num_bytes(src), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(dst.data, src.data, src.numel(), cudaMemcpyDeviceToDevice);
   } else {
-    cudaMemcpy(dst.data, src.data, num_bytes(src), cudaMemcpyHostToHost);
+    cudaMemcpy(dst.data, src.data, src.numel(), cudaMemcpyHostToHost);
   }
 
   CHECK_CUDA_ERROR();
-}
-
-Tensor randn(std::vector<int> &shape) {
-  auto tensor = create_tensor(shape);
-
-  randn(tensor.data, mlkl::numel(tensor));
-
-  CHECK_CUDA_ERROR();
-}
-
-void randn(Tensor &tensor) {
-  randn(tensor.data, mlkl::numel(tensor));
 }
 
 void destroy(Tensor &tensor) {
@@ -86,6 +74,17 @@ void randn(float *data, size_t numel) {
 }
 }// namespace
 
-//
+Tensor randn(std::vector<int> &shape) {
+  auto tensor = create_tensor(shape);
+
+  randn(tensor.data, tensor.numel());
+
+  CHECK_CUDA_ERROR();
+}
+
+void randn(Tensor &tensor) {
+  randn(tensor.data, tensor.numel());
+}
+
 // Tensor assert_correctness(Tensor &tensor, Tensor &ref, T epsilon = 1e-6);
 }// namespace mlkl::operators::cuda

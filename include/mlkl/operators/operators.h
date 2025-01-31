@@ -9,7 +9,7 @@
 #include <mlkl/operators/avx/transpose.h>
 #endif
 
-#ifdef __CUDA__
+#ifdef __CUDACC__
 #include <mlkl/operators/cuda/gemm.h>
 #include <mlkl/operators/cuda/softmax.h>
 #include <mlkl/operators/cuda/tensor.h>

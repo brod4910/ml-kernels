@@ -47,7 +47,7 @@ if(${BUILD_CUDA})
     option(CUDA_ARCH "CUDA architecture" "86")
     # Find CUDA package and include directories
     enable_language(CUDA)
-    find_package(CUDAToolkit)
+    find_package(CUDAToolkit REQUIRED)
 
     # Specify the CUDA compute capability
     set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode=arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH})  # Change the compute capability as needed
@@ -69,7 +69,11 @@ if(${BUILD_CUDA})
             $<$<CONFIG:Release>:-O3 -lineinfo>
         >
     )
-
+    # target_include_directories(${CUDA_LIB_NAME}
+    #     PRIVATE
+    #         ${CUDAToolkit_INCLUDE_DIRS}
+    #         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+    # )
     target_include_directories(
             ${CUDA_LIB_NAME}
             PUBLIC

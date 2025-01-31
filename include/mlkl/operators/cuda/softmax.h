@@ -36,8 +36,8 @@ __global__ void softmax_2d_v1(float *input, float *output, int batch_size, int d
 }
 }// namespace kernel
 
-template<typename T>
-void softmax_2d_v1(Tensor<T> &input, Tensor<T> &output, int dim, std::vector<int> &shape) {
+namespace {
+void softmax_2d_v1(float *input, float *output, int dim, int *shape) {
   constexpr int NUM_THREADS = 16;
   int batch_size = shape[0];
   int dim_size = shape[dim];
@@ -46,5 +46,10 @@ void softmax_2d_v1(Tensor<T> &input, Tensor<T> &output, int dim, std::vector<int
   dim3 block_dim(NUM_THREADS);
 
   kernel::softmax_2d_v1<NUM_THREADS><<<grid_dim, block_dim>>>(input, output, batch_size, dim_size);
+}
+}// namespace
+
+void softmax(Tensor &input, Tensor &output, int dim) {
+  softmax_2d_v1(input.data, output.data, dim, output.shape);
 }
 }// namespace mlkl::operators::cuda

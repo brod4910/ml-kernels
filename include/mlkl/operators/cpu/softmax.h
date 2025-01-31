@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <vector>
 
+#include <mlkl/core/tensor.h>
+
 namespace mlkl::operators::cpu {
-void softmax(const float *__restrict__ input, float *__restrict__ output, int dim, std::vector<int> &shape);
+void softmax(Tensor &input, Tensor &output, int dim);
 }// namespace mlkl::operators::cpu

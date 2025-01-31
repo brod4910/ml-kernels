@@ -8,7 +8,7 @@
 #include "sgemm_avx.h"
 #endif
 
-#ifdef __CUDA__
+#ifdef __CUDACC__
 #include "sgemm_cuda.h"
 #endif
 
@@ -35,7 +35,7 @@ int main() {
     std::cout << "AVX2" << std::endl;
     sgemm_avx(M, N, K, alpha, beta);
 #endif
-#ifdef __CUDA__
+#ifdef __CUDACC__
     std::cout << "CUDA" << std::endl;
     sgemm_cuda(M, N, K, alpha, beta);
 #endif

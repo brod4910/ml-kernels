@@ -18,7 +18,7 @@ endif()
 
 if (${BUILD_CUDA})
     enable_language(CUDA)
-    find_package(CUDAToolkit)
+    find_package(CUDAToolkit REQUIRED)
     set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode=arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH})
     target_compile_options(sgemm-example PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-D__CUDA__ -G>)
     target_compile_options(sgemm-example PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-D__CUDA__ -g>)

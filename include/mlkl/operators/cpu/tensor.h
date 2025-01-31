@@ -24,13 +24,13 @@ Tensor create_tensor(std::vector<int> &shape) {
     }
   }
 
-  tensor.data = reinterpret_cast<decltype(tensor.data)>(malloc(num_bytes(tensor)));
+  tensor.data = reinterpret_cast<decltype(tensor.data)>(malloc(tensor.num_bytes()));
 
   return tensor;
 }
 
-void fill_tensor(Tensor &tensor, int value) {
-  for (int i = 0; i < numel(tensor); ++i) {
+void fill(Tensor &tensor, int value) {
+  for (int i = 0; i < tensor.numel(); ++i) {
     tensor.data[i] = value;
   }
 }
@@ -39,18 +39,6 @@ void destroy(Tensor &tensor) {
   free(tensor.data);
   delete[] tensor.shape;
   delete[] tensor.stride;
-}
-
-Tensor randn(std::vector<int> &shape) {
-  auto tensor = create_tensor(shape);
-
-  randn(tensor.data, mlkl::numel(tensor));
-
-  return tensor;
-}
-
-void randn(Tensor &tensor) {
-  randn(tensor.data, mlkl::numel(tensor));
 }
 
 namespace {
@@ -63,5 +51,18 @@ void randn(float *data, size_t numel) {
     data[i] = dist(gen);
   }
 }
+
 }// namespace
+
+Tensor randn(std::vector<int> &shape) {
+  auto tensor = create_tensor(shape);
+
+  randn(tensor.data, tensor.numel());
+
+  return tensor;
+}
+
+void randn(Tensor &tensor) {
+  randn(tensor.data, tensor.numel());
+}
 }// namespace mlkl::operators::cpu

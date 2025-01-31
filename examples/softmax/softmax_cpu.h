@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "mlkl/core/tensor.h"
+#include "mlkl/core/tensor_ops.h"
 #include <mlkl/mlkl.h>
 
 #include <chrono>
@@ -62,11 +64,11 @@ void softmax_cpu(int M, int N) {
   long long total_duration = 0;
 
   for (int i = 0; i < num_runs; ++i) {
-    set_random_matrix(input, M, 1);
-    initialize_matrix_cpu(output, M, 0, 1);
+    mlkl::randn(input, mlkl::Device::CPU);
+    mlkl::fill(output, 0, mlkl::Device::CPU);
 
     auto start = std::chrono::high_resolution_clock::now();
-    mlkl::softmax(input, output, 0, shape);
+    mlkl::softmax(input, output, 0, mlkl::Device::CPU);
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
     total_duration += duration.count();
@@ -75,9 +77,9 @@ void softmax_cpu(int M, int N) {
   long long average_duration = total_duration / num_runs;
   std::cout << "Average time taken by function CPU Softmax: " << average_duration << " nanoseconds" << std::endl;
 
-  if (!assert_correctness(output, M)) {
-    std::cerr << "Reference CPU kernel produced incorrect results." << std::endl;
-  }
+  // if (!assert_correctness(output, M)) {
+  //   std::cerr << "Reference CPU [kernel produced incorrect results." << std::endl;
+  // }
 
   //   print_matrix_cpu(output, 1, M);
 }

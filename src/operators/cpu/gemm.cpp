@@ -3,7 +3,8 @@
 //
 #include <mlkl/operators/cpu/gemm.h>
 
-namespace ml::operators::cpu {
+namespace mlkl::operators::cpu {
+namespace {
 void sgemm(const float *__restrict__ a, const float alpha,
            const float *__restrict__ b, const float beta,
            float *c, size_t M, size_t N, size_t K) {
@@ -15,4 +16,9 @@ void sgemm(const float *__restrict__ a, const float alpha,
     }
   }
 }
-}// namespace ml::operators::cpu
+}// namespace
+
+void sgemm(Tensor &a, Tensor &b, Tensor &c, float alpha, float beta) {
+  sgemm(a.data, alpha, b.data, beta, c.data, c.shape[0], c.shape[1], a.shape[1]);
+}
+}// namespace mlkl::operators::cpu

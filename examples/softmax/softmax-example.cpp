@@ -1,4 +1,4 @@
-#ifdef __CUDA__
+#ifdef __CUDACC__
 #include "softmax_cuda.h"
 #endif
 
@@ -18,7 +18,7 @@ int main() {
   for (const auto &[M, N] : matrix_sizes) {
     std::cout << "CPU" << std::endl;
     softmax_cpu(M, N);
-#ifdef __CUDA__
+#ifdef __CUDACC__
     std::cout << "CUDA" << std::endl;
     softmax_cuda(M, N);
 #endif

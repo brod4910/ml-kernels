@@ -1,7 +1,7 @@
 #pragma once
 #include <mlkl/operators/cpu/tensor.h>
 
-#ifdef __CUDA__
+#ifdef __CUDACC__
 #include <mlkl/operators/cuda/tensor.h>
 #else
 #include <stdexcept>
@@ -16,7 +16,7 @@ mlkl::Tensor create_tensor(std::vector<int> &shape, Device device) {
   if (device == mlkl::Device::CPU) {
     return operators::cpu::create_tensor(shape);
   } else {
-#ifdef __CUDA__
+#ifdef __CUDACC__
     return operators::cuda::create_tensor(shape);
 #else
     throw std::runtime_error("GPU not supported in this build.");
@@ -24,12 +24,12 @@ mlkl::Tensor create_tensor(std::vector<int> &shape, Device device) {
   }
 }
 
-void fill_tensor(mlkl::Tensor &tensor, int value, Device device) {
+void fill(mlkl::Tensor &tensor, int value, Device device) {
   if (device == mlkl::Device::CPU) {
-    return operators::cpu::fill_tensor(tensor, value);
+    return operators::cpu::fill(tensor, value);
   } else {
-#ifdef __CUDA__
-    return operators::cuda::fill_tensor(tensor, value);
+#ifdef __CUDACC__
+    return operators::cuda::fill(tensor, value);
 #else
     throw std::runtime_error("GPU not supported in this build.");
 #endif
@@ -40,7 +40,7 @@ void destroy(mlkl::Tensor &tensor, Device device) {
   if (device == mlkl::Device::CPU) {
     return operators::cpu::destroy(tensor);
   } else {
-#ifdef __CUDA__
+#ifdef __CUDACC__
     return operators::cuda::destroy(tensor);
 #else
     throw std::runtime_error("GPU not supported in this build.");
@@ -52,7 +52,7 @@ Tensor randn(std::vector<int> &shape, Device device) {
   if (device == Device::CPU) {
     return operators::cpu::randn(shape);
   } else {
-#ifdef __CUDA__
+#ifdef __CUDACC__
     return operators::cuda::randn(shape);
 #else
     throw std::runtime_error("GPU not supported in this build.");
@@ -64,7 +64,7 @@ void randn(mlkl::Tensor &tensor, Device device) {
   if (device == Device::CPU) {
     return operators::cpu::randn(tensor);
   } else {
-#ifdef __CUDA__
+#ifdef __CUDACC__
     return operators::cuda::randn(tensor);
 #else
     throw std::runtime_error("GPU not supported in this build.");
