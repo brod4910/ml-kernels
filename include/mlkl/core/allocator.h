@@ -5,29 +5,22 @@
 
 namespace mlkl {
 struct TensorAllocator {
-  std::vector<Tensor> tensors_;
-  Device device_;
-
-  TensorAllocator(Device device) : device_(device) {}
+  std::vector<Tensor> tensors;
 
   ~TensorAllocator() {
-    for (auto tensor : tensors_) {
-      mlkl::destroy(tensor, device_);
+    for (auto tensor : tensors) {
+      mlkl::destroy(tensor);
     }
   }
 
-  Tensor empty(std::vector<int> &shape) {
-    auto tensor = create_tensor(shape, device_);
-    tensors_.push_back(tensor);
+  Tensor empty(std::vector<int> &shape, Device device) {
+    auto tensor = mlkl::empty(shape, device);
+    tensors.push_back(tensor);
     return tensor;
   }
 
-  Tensor randn(std::vector<int> &shape) {
-    return mlkl::randn(shape, device_);
+  Tensor randn(std::vector<int> &shape, Device device) {
+    return mlkl::randn(shape, device);
   }
-
-  // Tensor copy(Tensor &tensor, Device device) {
-
-  // }
 };
 }// namespace mlkl

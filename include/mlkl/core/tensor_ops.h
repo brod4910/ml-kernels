@@ -12,20 +12,20 @@
 #include <vector>
 
 namespace mlkl {
-mlkl::Tensor create_tensor(std::vector<int> &shape, Device device) {
+mlkl::Tensor empty(std::vector<int> &shape, Device device) {
   if (device == mlkl::Device::CPU) {
-    return operators::cpu::create_tensor(shape);
+    return operators::cpu::empty(shape);
   } else {
 #ifdef __CUDACC__
-    return operators::cuda::create_tensor(shape);
+    return operators::cuda::empty(shape);
 #else
     throw std::runtime_error("GPU not supported in this build.");
 #endif
   }
 }
 
-void fill(mlkl::Tensor &tensor, int value, Device device) {
-  if (device == mlkl::Device::CPU) {
+void fill(mlkl::Tensor &tensor, int value) {
+  if (tensor.device == mlkl::Device::CPU) {
     return operators::cpu::fill(tensor, value);
   } else {
 #ifdef __CUDACC__
@@ -36,8 +36,8 @@ void fill(mlkl::Tensor &tensor, int value, Device device) {
   }
 }
 
-void destroy(mlkl::Tensor &tensor, Device device) {
-  if (device == mlkl::Device::CPU) {
+void destroy(mlkl::Tensor &tensor) {
+  if (tensor.device == mlkl::Device::CPU) {
     return operators::cpu::destroy(tensor);
   } else {
 #ifdef __CUDACC__
@@ -60,8 +60,8 @@ Tensor randn(std::vector<int> &shape, Device device) {
   }
 }
 
-void randn(mlkl::Tensor &tensor, Device device) {
-  if (device == Device::CPU) {
+void randn(mlkl::Tensor &tensor) {
+  if (tensor.device == Device::CPU) {
     return operators::cpu::randn(tensor);
   } else {
 #ifdef __CUDACC__
@@ -69,6 +69,15 @@ void randn(mlkl::Tensor &tensor, Device device) {
 #else
     throw std::runtime_error("GPU not supported in this build.");
 #endif
+  }
+}
+
+mlkl::Tensor to(Tensor &tensor, Device device) {
+  if (tensor.device == device) {
+    return tensor;
+  }
+
+  if (device == Device::CPU) {
   }
 }
 }// namespace mlkl

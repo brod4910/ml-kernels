@@ -1,9 +1,10 @@
 #include <mlkl/mlkl.h>
+#include <mlkl/operators/cuda/gemm.h>
+#include <mlkl/utils/device.h>
 
 #include <cassert>
 #include <cublas_v2.h>
 #include <cuda_runtime_api.h>
-#include <functional>
 #include <iomanip>
 #include <iostream>
 
@@ -31,21 +32,20 @@ template<typename Kernel>
 void test_kernel(const char *kernel_name,
                  Kernel kernel,
                  int M, int N, int K, float alpha, float beta, int num_runs = 10) {
-  auto cpu_allocator = mlkl::TensorAllocator(mlkl::Device::CPU);
-  auto gpu_allocator = mlkl::TensorAllocator(mlkl::Device::CUDA);
+  auto allocator = mlkl::TensorAllocator();
 
   std::vector<int> s1{M, K};
   std::vector<int> s2{K, N};
   std::vector<int> s3{M, N};
 
-  auto a_d = gpu_allocator.randn(s1);
-  auto b_d = gpu_allocator.randn(s2);
-  auto c_d = gpu_allocator.empty(s3);
+  auto a_d = allocator.randn(s1, mlkl::Device::CUDA);
+  auto b_d = allocator.randn(s2, mlkl::Device::CUDA);
+  auto c_d = allocator.empty(s3, mlkl::Device::CUDA);
 
-  auto a_cpu = cpu_allocator.empty(s1);
-  auto b_cpu = cpu_allocator.empty(s2);
-  auto c_cpu = cpu_allocator.empty(s3);
-  auto ref_matrix = cpu_allocator.empty(s3);
+  auto a_cpu = allocator.empty(s1, mlkl::Device::CPU);
+  auto b_cpu = allocator.empty(s2, mlkl::Device::CPU);
+  auto c_cpu = allocator.empty(s3, mlkl::Device::CPU);
+  auto ref_matrix = allocator.empty(s3, mlkl::Device::CPU);
 
   mlkl::sgemm(a_cpu, b_cpu, c_cpu, alpha, beta, mlkl::Device::CPU);
 
@@ -65,7 +65,7 @@ void test_kernel(const char *kernel_name,
   }
 
   for (int i = 0; i < num_runs; ++i) {
-    mlkl::fill(c_d, 0, mlkl::Device::CUDA);
+    mlkl::fill(c_d, 0);
     CHECK_CUDA_ERROR();
 
     cudaEventRecord(start);
@@ -110,8 +110,11 @@ void sgemm_cuda(int M, int N, int K, float alpha, float beta) {
   cublasCreate(&handle);
   int num_runs = 1000;
 
-  auto cublas_kernel = [&](float *a, float alpha, float *b, float beta, float *c, int M, int N, int K) {
-    CHECK_CUBLAS_STATUS(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha, b, N, a, K, &beta, c, N));
+  auto cublas_kernel = [&](mlkl::Tensor &a, mlkl::Tensor &b, mlkl::Tensor &c, float alpha, float beta) {
+    int M = c.shape[0];
+    int N = c.shape[1];
+    int K = a.shape[1];
+    CHECK_CUBLAS_STATUS(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha, b.data, N, a.data, K, &beta, c.data, N));
   };
   // Test CUBLAS
   test_kernel("CUBLAS", cublas_kernel, M, N, K, alpha, beta, num_runs);

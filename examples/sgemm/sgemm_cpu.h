@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include "mlkl/core/tensor.h"
-#include "mlkl/core/tensor_ops.h"
 #include <chrono>
 #include <iostream>
 
@@ -27,23 +25,23 @@ void print_matrix_cpu(const float *matrix, size_t M, size_t N) {
 }
 
 void sgemm_cpu(int M, int N, int K, float alpha, float beta) {
-  auto cpu_allocator = mlkl::TensorAllocator(mlkl::Device::CPU);
+  auto allocator = mlkl::TensorAllocator();
 
   std::vector<int> s1{M, K};
   std::vector<int> s2{K, N};
   std::vector<int> s3{M, N};
 
-  auto a = cpu_allocator.empty(s1);
-  auto b = cpu_allocator.empty(s2);
-  auto c = cpu_allocator.empty(s3);
+  auto a = allocator.empty(s1, mlkl::Device::CPU);
+  auto b = allocator.empty(s2, mlkl::Device::CPU);
+  auto c = allocator.empty(s3, mlkl::Device::CPU);
 
   const int num_runs = 100;
   long long total_duration = 0;
 
   for (int i = 0; i < num_runs; ++i) {
-    mlkl::randn(a, mlkl::Device::CPU);
-    mlkl::randn(b, mlkl::Device::CPU);
-    mlkl::fill(c, 0, mlkl::Device::CPU);
+    mlkl::randn(a);
+    mlkl::randn(b);
+    mlkl::fill(c, 0);
 
     auto start = std::chrono::high_resolution_clock::now();
     // ml::operators::cpu::transpose(b, b_T, M, N);

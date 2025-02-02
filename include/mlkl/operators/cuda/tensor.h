@@ -14,7 +14,7 @@ namespace mlkl::operators::cuda {
 namespace kernel {
 }// namespace kernel
 
-Tensor create_tensor(std::vector<int> &shape) {
+Tensor empty(std::vector<int> &shape) {
   // Zero‐initialize the Tensor
   Tensor tensor;
 
@@ -75,11 +75,13 @@ void randn(float *data, size_t numel) {
 }// namespace
 
 Tensor randn(std::vector<int> &shape) {
-  auto tensor = create_tensor(shape);
+  auto tensor = empty(shape);
 
   randn(tensor.data, tensor.numel());
 
   CHECK_CUDA_ERROR();
+
+  return tensor;
 }
 
 void randn(Tensor &tensor) {

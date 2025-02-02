@@ -36,10 +36,6 @@ struct Tensor {
   Device device = Device::CPU;
   DType dtype = DType::F32;
 
-  void to_fp16() {
-    throw std::runtime_error("fp16 conversion not supported.");
-  }
-
   size_t num_bytes() {
     return std::accumulate(shape, shape + rank, 1, std::multiplies<int>()) * sizeof(*data);
   }

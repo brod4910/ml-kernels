@@ -55,17 +55,17 @@
 
 void softmax_cpu(int M, int N) {
   std::vector<int> shape{M};
-  auto allocator = mlkl::TensorAllocator(mlkl::Device::CPU);
+  auto allocator = mlkl::TensorAllocator();
 
-  auto input = allocator.randn(shape);
-  auto output = allocator.empty(shape);
+  auto input = allocator.randn(shape, mlkl::Device::CPU);
+  auto output = allocator.empty(shape, mlkl::Device::CPU);
 
   const int num_runs = 100;
   long long total_duration = 0;
 
   for (int i = 0; i < num_runs; ++i) {
-    mlkl::randn(input, mlkl::Device::CPU);
-    mlkl::fill(output, 0, mlkl::Device::CPU);
+    mlkl::randn(input);
+    mlkl::fill(output, 0);
 
     auto start = std::chrono::high_resolution_clock::now();
     mlkl::softmax(input, output, 0, mlkl::Device::CPU);

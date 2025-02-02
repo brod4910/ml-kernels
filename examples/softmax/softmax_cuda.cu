@@ -1,5 +1,6 @@
-#include "mlkl/core/tensor.h"
 #include <mlkl/mlkl.h>
+#include <mlkl/operators/cuda/softmax.h>
+#include <mlkl/utils/device.h>
 
 #include <cassert>
 #include <cuda_runtime_api.h>
@@ -12,16 +13,15 @@ void test_kernel(const char *kernel_name,
                  int M, int N, int num_runs = 10) {
   std::vector<int>
     shape{M, N};
-  auto cpu_allocator = mlkl::TensorAllocator(mlkl::Device::CPU);
-  auto gpu_allocator = mlkl::TensorAllocator(mlkl::Device::CUDA);
+  auto allocator = mlkl::TensorAllocator();
 
   std::vector<int> s1{M, N};
 
-  auto a_d = gpu_allocator.randn(s1);
-  auto b_d = gpu_allocator.randn(s1);
+  auto a_d = allocator.randn(s1, mlkl::Device::CUDA);
+  auto b_d = allocator.randn(s1, mlkl::Device::CUDA);
 
-  auto a_cpu = cpu_allocator.empty(s1);
-  auto b_cpu = cpu_allocator.empty(s1);
+  auto a_cpu = allocator.empty(s1, mlkl::Device::CPU);
+  auto b_cpu = allocator.empty(s1, mlkl::Device::CPU);
 
   mlkl::softmax(a_cpu, b_cpu, 0, mlkl::Device::CPU);
 
@@ -33,17 +33,17 @@ void test_kernel(const char *kernel_name,
 
   // warm-up
   for (int i = 0; i < 10; ++i) {
-    kernel(a_d, b_d, 0, shape);
+    kernel(a_d, b_d, 0);
     CHECK_CUDA_ERROR();
   }
 
   for (int i = 0; i < num_runs; ++i) {
-    cudaMemcpy(b_d, b, M * N * sizeof(float), cudaMemcpyHostToDevice);
+    mlkl::fill(b_d, 0);
     CHECK_CUDA_ERROR();
 
     cudaEventRecord(start);
 
-    kernel(a_d, b_d, 0, shape);
+    kernel(a_d, b_d, 0);
     CHECK_CUDA_ERROR();
 
     cudaDeviceSynchronize();
@@ -79,16 +79,11 @@ void test_kernel(const char *kernel_name,
   // Cleanup
   cudaEventDestroy(start);
   cudaEventDestroy(stop);
-  cudaFree(a_d);
-  cudaFree(b_d);
-  delete[] a;
-  delete[] b;
-  delete[] ref_matrix;
 }
 
 void softmax_cuda(int M, int N) {
   int num_runs = 1000;
 
   // Test custom kernels
-  test_kernel("Softmax Kernel V1", [&](float *a, float *b, int dim, std::vector<int> &shape) { mlkl::operators::cuda::launch_softmax_2d_v1(a, b, dim, shape); }, M, N, num_runs);
+  test_kernel("Softmax Kernel V1", [&](mlkl::Tensor &a, mlkl::Tensor &b, int dim) { mlkl::operators::cuda::softmax(a, b, dim); }, M, N, num_runs);
 }
