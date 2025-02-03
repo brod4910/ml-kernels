@@ -30,23 +30,23 @@ struct Tensor {
   float *data;
 
   int rank;
-  int *shape;// vector here??
-  int *stride;
+  std::vector<int> shape;
+  std::vector<int> stride;
 
   Device device = Device::CPU;
   DType dtype = DType::F32;
 
   size_t num_bytes() {
-    return std::accumulate(shape, shape + rank, 1, std::multiplies<int>()) * sizeof(*data);
+    return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>()) * sizeof(*data);
   }
 
   size_t numel() {
-    return std::accumulate(shape, shape + rank, 1, std::multiplies<int>());
+    return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>());
   }
 
   void calculate_stride() {
     int stride = 1;
-    for (int i = rank - 1; i > 0; --i) {
+    for (int i = rank - 1; i >= 0; --i) {
       this->stride[i] = stride;
       stride *= shape[i];
     }

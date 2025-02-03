@@ -7,11 +7,11 @@
 #include <mlkl/core/tensor.h>
 
 namespace mlkl::operators::cpu {
-Tensor create_tensor(std::vector<int> &shape) {
+Tensor empty(std::vector<int> &shape) {
   Tensor tensor;
   tensor.rank = shape.size();
-  tensor.shape = new int[tensor.rank];
-  tensor.stride = new int[tensor.rank];
+  tensor.shape.reserve(tensor.rank);
+  tensor.stride.reserve(tensor.rank);
 
   for (int i = 0; i < tensor.rank; ++i) {
     tensor.shape[i] = shape[i];
@@ -37,8 +37,6 @@ void fill(Tensor &tensor, int value) {
 
 void destroy(Tensor &tensor) {
   free(tensor.data);
-  delete[] tensor.shape;
-  delete[] tensor.stride;
 }
 
 namespace {
@@ -55,7 +53,7 @@ void randn(float *data, size_t numel) {
 }// namespace
 
 Tensor randn(std::vector<int> &shape) {
-  auto tensor = create_tensor(shape);
+  auto tensor = empty(shape);
 
   randn(tensor.data, tensor.numel());
 

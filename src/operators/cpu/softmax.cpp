@@ -25,6 +25,6 @@ void softmax(const float *__restrict__ input, float *__restrict__ output, int di
 }// namespace
 
 void softmax(Tensor &input, Tensor &output, int dim) {
-  softmax(input.data, output.data, dim, output.shape);
+  softmax(input.data, output.data, dim, output.shape.data());
 }
 }// namespace mlkl::operators::cpu

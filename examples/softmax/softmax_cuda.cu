@@ -1,3 +1,5 @@
+#include "mlkl/core/tensor.h"
+#include "mlkl/core/tensor_ops.h"
 #include <mlkl/mlkl.h>
 #include <mlkl/operators/cuda/softmax.h>
 #include <mlkl/utils/device.h>
@@ -18,12 +20,12 @@ void test_kernel(const char *kernel_name,
   std::vector<int> s1{M, N};
 
   auto a_d = allocator.randn(s1, mlkl::Device::CUDA);
-  auto b_d = allocator.randn(s1, mlkl::Device::CUDA);
-
   auto a_cpu = allocator.empty(s1, mlkl::Device::CPU);
-  auto b_cpu = allocator.empty(s1, mlkl::Device::CPU);
+  auto b = allocator.randn(s1, mlkl::Device::CUDA);
 
-  mlkl::softmax(a_cpu, b_cpu, 0, mlkl::Device::CPU);
+  auto ref_cpu = allocator.empty(s1, mlkl::Device::CPU);
+
+  mlkl::softmax(a_cpu, ref_cpu, 0, mlkl::Device::CPU);
 
   cudaEvent_t start, stop;
   cudaEventCreate(&start);
@@ -33,17 +35,17 @@ void test_kernel(const char *kernel_name,
 
   // warm-up
   for (int i = 0; i < 10; ++i) {
-    kernel(a_d, b_d, 0);
+    kernel(a_d, b, 0);
     CHECK_CUDA_ERROR();
   }
 
   for (int i = 0; i < num_runs; ++i) {
-    mlkl::fill(b_d, 0);
+    mlkl::fill(b, 0);
     CHECK_CUDA_ERROR();
 
     cudaEventRecord(start);
 
-    kernel(a_d, b_d, 0);
+    kernel(a_d, b, 0);
     CHECK_CUDA_ERROR();
 
     cudaDeviceSynchronize();
@@ -55,11 +57,10 @@ void test_kernel(const char *kernel_name,
     total_duration += time_elapsed;
   }
 
-  cudaMemcpy(b, b_d, M * N * sizeof(float), cudaMemcpyDeviceToHost);
+  mlkl::to(b, mlkl::Device::CPU);
   CHECK_CUDA_ERROR();
 
-  bool correct = mlkl::cpu::utils::assert_correctness(b, ref_matrix, M, N);
-  if (!correct) {
+  if (!mlkl::equals(b, ref_cpu)) {
     std::cerr << "Kernel " << kernel_name << " produced incorrect results." << std::endl;
   }
 

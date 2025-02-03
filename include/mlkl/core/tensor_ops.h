@@ -72,12 +72,55 @@ void randn(mlkl::Tensor &tensor) {
   }
 }
 
-mlkl::Tensor to(Tensor &tensor, Device device) {
+void to(Tensor &tensor, Device device) {
   if (tensor.device == device) {
-    return tensor;
+    return;
   }
 
-  if (device == Device::CPU) {
+#ifdef __CUDACC__
+  if (device == Device::CPU && tensor.device == Device::CUDA) {
+    auto temp = empty(tensor.shape, device);
+    operators::cuda::copy(tensor, tensor.device, temp, device);
+    destroy(tensor);
+    tensor = temp;
   }
+#endif
+}
+
+namespace {
+bool same_shape(Tensor &a, Tensor &b) {
+  if (a.rank != b.rank) {
+    return false;
+  }
+
+  for (int i = 0; i < a.rank; ++i) {
+    if (a.shape[i] != b.shape[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+}// namespace
+
+bool equals(Tensor &a, Tensor &b, float epsilon = 1e-6) {
+  if (a.device != Device::CPU || b.device != Device::CPU) {
+    return false;
+  }
+
+  if (a.numel() != b.numel() || !same_shape(a, b)) {
+    return false;
+  }
+
+  float diff = .0f;
+
+  for (int i = 0; i < a.numel(); ++i) {
+    diff = fabs((double) a.data[i] - (double) b.data[i]);
+    if (diff > epsilon) {
+      return false;
+    }
+  }
+
+  return true;
 }
 }// namespace mlkl

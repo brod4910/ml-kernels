@@ -20,8 +20,8 @@ Tensor empty(std::vector<int> &shape) {
 
   tensor.rank = shape.size();
 
-  tensor.shape = new int[tensor.rank];
-  tensor.stride = new int[tensor.rank];
+  tensor.shape.reserve(tensor.rank);
+  tensor.stride.reserve(tensor.rank);
 
   for (int i = 0; i < tensor.rank; ++i) {
     tensor.shape[i] = shape[i];
@@ -56,8 +56,6 @@ void copy(Tensor &src, Device src_device, Tensor &dst, Device dst_device) {
 
 void destroy(Tensor &tensor) {
   cudaFree(tensor.data);
-  delete tensor.shape;
-  delete tensor.stride;
 }
 
 namespace {
