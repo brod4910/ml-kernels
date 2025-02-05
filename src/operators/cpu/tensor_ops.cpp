@@ -1,4 +1,7 @@
+#include "mlkl/core/tensor.h"
+#include <algorithm>
 #include <cstdlib>
+#include <cstring>
 #include <random>
 #include <vector>
 
@@ -31,6 +34,10 @@ void fill(Tensor &tensor, int value) {
   for (int i = 0; i < tensor.numel(); ++i) {
     tensor.data[i] = value;
   }
+}
+
+void copy(Tensor &src, Tensor &dst) {
+  memcpy(dst.data, src.data, dst.num_bytes());
 }
 
 void destroy(Tensor &tensor) {
