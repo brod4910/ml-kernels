@@ -1,3 +1,4 @@
+#include "mlkl/core/tensor.h"
 #include <cmath>
 
 #include <mlkl/operators/cpu/tensor_ops.h>
@@ -121,5 +122,17 @@ bool equals(Tensor &a, Tensor &b, float epsilon) {
   }
 
   return true;
+}
+
+void copy(Tensor &src, Tensor &dst) {
+  if (src.device == Device::CUDA || dst.device == Device::CUDA) {
+#ifdef __CUDACC__
+    operators::cuda::copy(src, dst);
+#else
+    throw std::runtime_error("GPU not supported in this build.");
+#endif
+  } else {
+    operators::cpu::copy(src, dst);
+  }
 }
 }// namespace mlkl

@@ -24,5 +24,12 @@ struct TensorAllocator {
   Tensor randn(std::vector<int> &shape, Device device) {
     return mlkl::randn(shape, device);
   }
+
+  Tensor copy(Tensor &tensor, Device device) {
+    auto output = this->empty(tensor.shape, device);
+    mlkl::copy(tensor, output);
+
+    return output;
+  }
 };
 }// namespace mlkl

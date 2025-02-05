@@ -34,12 +34,12 @@ void fill(Tensor &tensor, int value) {
   CHECK_CUDA_ERROR();
 }
 
-void copy(Tensor &src, Device src_device, Tensor &dst, Device dst_device) {
-  if (src_device == mlkl::Device::CUDA && dst_device == mlkl::Device::CPU) {
+void copy(Tensor &src, Tensor &dst) {
+  if (src.device == mlkl::Device::CUDA && dst.device == mlkl::Device::CPU) {
     cudaMemcpy(dst.data, src.data, src.numel(), cudaMemcpyDeviceToHost);
-  } else if (src_device == mlkl::Device::CPU && dst_device == mlkl::Device::CUDA) {
+  } else if (src.device == mlkl::Device::CPU && dst.device == mlkl::Device::CUDA) {
     cudaMemcpy(dst.data, src.data, src.numel(), cudaMemcpyHostToDevice);
-  } else if (src_device == mlkl::Device::CUDA && dst_device == mlkl::Device::CUDA) {
+  } else if (src.device == mlkl::Device::CUDA && dst.device == mlkl::Device::CUDA) {
     cudaMemcpy(dst.data, src.data, src.numel(), cudaMemcpyDeviceToDevice);
   } else {
     cudaMemcpy(dst.data, src.data, src.numel(), cudaMemcpyHostToHost);
