@@ -1,3 +1,5 @@
+#pragma once
+
 #include <mlkl/core/tensor.h>
 #include <mlkl/core/tensor_ops.h>
 

@@ -1,10 +1,4 @@
-#pragma once
-
-#include <functional>
-#include <iterator>
-#include <numeric>
-
-#include <mlkl/core/tensor.h>
+#include <mlkl/operators/cuda/tensor_ops.h>
 #include <mlkl/utils/device.h>
 
 #include <cuda_runtime_api.h>

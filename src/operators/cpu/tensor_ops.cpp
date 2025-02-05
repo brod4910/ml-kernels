@@ -1,10 +1,8 @@
-#pragma once
-
 #include <cstdlib>
 #include <random>
 #include <vector>
 
-#include <mlkl/core/tensor.h>
+#include <mlkl/operators/cpu/tensor_ops.h>
 
 namespace mlkl::operators::cpu {
 Tensor empty(std::vector<int> &shape) {

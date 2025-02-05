@@ -1,5 +1,3 @@
-#include "mlkl/core/tensor.h"
-#include "mlkl/core/tensor_ops.h"
 #include <mlkl/mlkl.h>
 #include <mlkl/operators/cuda/softmax.h>
 #include <mlkl/utils/device.h>

@@ -9,21 +9,6 @@
 
 #include <mlkl/mlkl.h>
 
-void initialize_matrix_cpu(float *matrix, size_t size, float value, int skip = 1) {
-  for (size_t i = 0; i < size; i += skip) {
-    matrix[i] = value;
-  }
-}
-
-void print_matrix_cpu(const float *matrix, size_t M, size_t N) {
-  for (size_t i = 0; i < M; ++i) {
-    for (size_t j = 0; j < N; ++j) {
-      std::cout << matrix[i * N + j] << " ";
-    }
-    std::cout << std::endl;
-  }
-}
-
 void sgemm_cpu(int M, int N, int K, float alpha, float beta) {
   auto allocator = mlkl::TensorAllocator();
 

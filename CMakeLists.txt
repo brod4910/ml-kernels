@@ -23,6 +23,24 @@ set(PACKAGES fmt::fmt)
 file(GLOB_RECURSE CORE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/core/*.cpp)
 file(GLOB_RECURSE CORE_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/core/*.h)
 
+
+# ---- CPU Build  ----
+set(CPU_LIB_NAME ${PROJECT_NAME}_cpu)
+file(GLOB_RECURSE CPU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/operators/cpu/*.cpp)
+file(GLOB_RECURSE CPU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/operators/cpu/*.h)
+
+add_library(${CPU_LIB_NAME} SHARED ${CPU_SRC_FILES} ${CPU_HDR_FILES} ${CORE_SRC_FILES} ${CORE_HDR_FILES})
+target_link_libraries(${CPU_LIB_NAME} PRIVATE ${PACKAGES})
+target_include_directories(
+        ${CPU_LIB_NAME}
+        PUBLIC
+        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+)
+target_compile_options(${CPU_LIB_NAME} PRIVATE 
+    $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
+    $<$<CONFIG:Release>:-O3 -DNDEBUG -Wall -std=c++17 -O3 -ffast-math>
+)
+
 # ---- AVX Build  ----
 if(${BUILD_AVX})
     set(AVX_LIB_NAME ${PROJECT_NAME}_avx)
@@ -57,9 +75,9 @@ if(${BUILD_CUDA})
     file(GLOB_RECURSE CUDA_SRC_FILES ${PROJECT_SOURCE_DIR}/src/operators/cuda/*.cu)
     file(GLOB_RECURSE CU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/operators/cuda/*.h)
     file(GLOB_RECURSE CUDA_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/operators/cuda/*.cuh)
-    add_library(${CUDA_LIB_NAME} SHARED ${CU_SRC_FILES} ${CU_HDR_FILES} ${CUDA_SRC_FILES} ${CUDA_HDR_FILES} ${CORE_SRC_FILES} ${CORE_HDR_FILES})
+    add_library(${CUDA_LIB_NAME} SHARED ${CPU_SRC_FILES} ${CPU_HDR_FILES} ${CU_SRC_FILES} ${CU_HDR_FILES} ${CUDA_SRC_FILES} ${CUDA_HDR_FILES} ${CORE_SRC_FILES} ${CORE_HDR_FILES})
     set_property(TARGET ${CUDA_LIB_NAME} PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH})
-    target_link_libraries(${CUDA_LIB_NAME} PRIVATE ${PACKAGES} CUDA::cudart CUDA::cuda_driver)
+    target_link_libraries(${CUDA_LIB_NAME} PUBLIC ${PACKAGES} CUDA::cudart CUDA::cuda_driver CUDA::curand)
     set_target_properties(${CUDA_LIB_NAME} PROPERTIES LINKER_LANGUAGE CUDA)
     
     target_compile_options(${CUDA_LIB_NAME} PRIVATE 
@@ -80,22 +98,5 @@ if(${BUILD_CUDA})
             "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
     )
 endif()
-
-# ---- CPU Build  ----
-set(CPU_LIB_NAME ${PROJECT_NAME}_cpu)
-file(GLOB_RECURSE CPU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/operators/cpu/*.cpp)
-file(GLOB_RECURSE CPU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/operators/cpu/*.h)
-
-add_library(${CPU_LIB_NAME} SHARED ${CPU_SRC_FILES} ${CPU_HDR_FILES} ${CORE_SRC_FILES} ${CORE_HDR_FILES})
-target_link_libraries(${CPU_LIB_NAME} PRIVATE ${PACKAGES})
-target_include_directories(
-        ${CPU_LIB_NAME}
-        PUBLIC
-        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
-)
-target_compile_options(${CPU_LIB_NAME} PRIVATE 
-    $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
-    $<$<CONFIG:Release>:-O3 -DNDEBUG -Wall -std=c++17 -O3 -ffast-math>
-)
 
 add_subdirectory(examples)

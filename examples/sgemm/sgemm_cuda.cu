@@ -1,3 +1,4 @@
+#include "mlkl/core/tensor_ops.h"
 #include <mlkl/mlkl.h>
 #include <mlkl/operators/cuda/gemm.h>
 #include <mlkl/utils/device.h>
@@ -13,18 +14,6 @@ void checkCuBLASStatus(cublasStatus_t status, const char *const func, const char
   if (status != CUBLAS_STATUS_SUCCESS) {
     std::cerr << "CUBLAS Error at : " << file << ":" << line << '\n';
     std::cerr << cublasGetStatusString(status) << " " << func << '\n';
-  }
-}
-
-void print_matrix(const float *matrix, size_t M, size_t N) {
-  const int width = 6;
-  for (size_t i = 0; i < M; ++i) {
-    std::cout << "[ ";
-    for (size_t j = 0; j < N; ++j) {
-      std::cout << std::setw(width) << matrix[i * N + j];
-      if (j < N - 1) std::cout << " ";
-    }
-    std::cout << " ]" << std::endl;
   }
 }
 
@@ -55,9 +44,6 @@ void test_kernel(const char *kernel_name,
 
   float total_duration = 0;
 
-  // std::cout << "Ref Matrix: " << std::endl;
-  // print_matrix(ref_matrix, M, N);
-
   // warm-up
   for (int i = 0; i < 10; ++i) {
     kernel(a_d, b_d, c_d, alpha, beta);
@@ -84,13 +70,9 @@ void test_kernel(const char *kernel_name,
 
   CHECK_CUDA_ERROR();
 
-  // std::cout << "Output Matrix: " << std::endl;
-  // print_matrix(c, M, N);
-
-  // bool correct = assert_correctness(c, ref_matrix, M, N);
-  // if (!correct) {
-  //   std::cerr << "Kernel " << kernel_name << " produced incorrect results." << std::endl;
-  // }
+  if (!mlkl::equals(c_d, ref_matrix)) {
+    std::cerr << "Kernel " << kernel_name << " produced incorrect results." << std::endl;
+  }
 
   float average_duration = total_duration / num_runs;
   float gflops = (2.0f * M * N * K) / (average_duration / 1000.0f) / 1e9;
