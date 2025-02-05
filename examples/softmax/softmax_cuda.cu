@@ -1,3 +1,4 @@
+#include "mlkl/core/tensor_ops.h"
 #include <mlkl/mlkl.h>
 #include <mlkl/operators/cuda/softmax.h>
 #include <mlkl/utils/device.h>
@@ -20,6 +21,8 @@ void test_kernel(const char *kernel_name,
   auto a_d = allocator.randn(s1, mlkl::Device::CUDA);
   auto a_cpu = allocator.empty(s1, mlkl::Device::CPU);
   auto b = allocator.randn(s1, mlkl::Device::CUDA);
+
+  mlkl::copy(a_d, a_cpu);
 
   auto ref_cpu = allocator.empty(s1, mlkl::Device::CPU);
 

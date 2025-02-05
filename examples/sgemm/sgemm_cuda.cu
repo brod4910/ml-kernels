@@ -36,6 +36,9 @@ void test_kernel(const char *kernel_name,
   auto c_cpu = allocator.empty(s3, mlkl::Device::CPU);
   auto ref_matrix = allocator.empty(s3, mlkl::Device::CPU);
 
+  mlkl::copy(a_d, a_cpu);
+  mlkl::copy(b_d, b_cpu);
+
   mlkl::sgemm(a_cpu, b_cpu, c_cpu, alpha, beta, mlkl::Device::CPU);
 
   cudaEvent_t start, stop;
@@ -67,6 +70,8 @@ void test_kernel(const char *kernel_name,
     cudaEventElapsedTime(&time_elapsed, start, stop);
     total_duration += time_elapsed;
   }
+
+  mlkl::to(c_d, mlkl::Device::CPU);
 
   CHECK_CUDA_ERROR();
 
