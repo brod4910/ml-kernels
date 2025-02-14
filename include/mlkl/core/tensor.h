@@ -1,17 +1,13 @@
 #pragma once
+#include <cuda_bf16.h>
+#include <cuda_fp16.h>
 
 #include <functional>
 #include <numeric>
 
-#ifdef __CUDACC__
-#include <cuda_fp16.h>
-
-using fp16 = __half;
-#else
-using fp16 = uint16_t;
-#endif
-
 using fp32 = float;
+using bf16 = __nv_bfloat16;
+using fp16 = __half;
 
 namespace mlkl {
 enum class Device {
@@ -22,6 +18,7 @@ enum class Device {
 enum class DType {
   F32,
   F16,
+  BF16,
   F8
 };
 
@@ -35,11 +32,11 @@ struct Tensor {
   Device device = Device::CPU;
   DType dtype = DType::F32;
 
-  size_t num_bytes() {
-    return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>()) * sizeof(*data);
+  int num_bytes() {
+    return numel() * sizeof(*data);
   }
 
-  size_t numel() {
+  int numel() {
     return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>());
   }
 

@@ -36,6 +36,11 @@ void sgemm_cpu(int M, int N, int K, float alpha, float beta) {
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     total_duration += duration.count();
   }
+
   long long average_duration = total_duration / num_runs;
-  std::cout << "Average time taken by function CPU GEMM: " << average_duration << " milliseconds" << std::endl;
+  float gflops = (2.0f * M * N * K) / (average_duration / 1000.0f) / 1e9;
+  std::cout << "Kernel: " << "CPU" << " | "
+            << "Size: " << M << "x" << K << "x" << N << " | "
+            << "Time: " << average_duration << " ms | "
+            << "GFLOPS: " << gflops << std::endl;
 }

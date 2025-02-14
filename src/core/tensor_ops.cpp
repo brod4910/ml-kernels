@@ -1,13 +1,8 @@
-#include "mlkl/core/tensor.h"
 #include <cmath>
 
+#include <mlkl/core/tensor.h>
 #include <mlkl/operators/cpu/tensor_ops.h>
-
-#ifdef __CUDACC__
-#include <mlkl/operators/cuda/tensor.h>
-#else
-#include <stdexcept>
-#endif
+#include <mlkl/operators/cuda/tensor_ops.h>
 
 #include <mlkl/core/tensor_ops.h>
 
@@ -16,11 +11,7 @@ Tensor empty(std::vector<int> &shape, Device device) {
   if (device == mlkl::Device::CPU) {
     return operators::cpu::empty(shape);
   } else {
-#ifdef __CUDACC__
     return operators::cuda::empty(shape);
-#else
-    throw std::runtime_error("GPU not supported in this build.");
-#endif
   }
 }
 
@@ -28,11 +19,7 @@ void fill(Tensor &tensor, int value) {
   if (tensor.device == mlkl::Device::CPU) {
     return operators::cpu::fill(tensor, value);
   } else {
-#ifdef __CUDACC__
     return operators::cuda::fill(tensor, value);
-#else
-    throw std::runtime_error("GPU not supported in this build.");
-#endif
   }
 }
 
@@ -40,11 +27,7 @@ void destroy(Tensor &tensor) {
   if (tensor.device == mlkl::Device::CPU) {
     return operators::cpu::destroy(tensor);
   } else {
-#ifdef __CUDACC__
     return operators::cuda::destroy(tensor);
-#else
-    throw std::runtime_error("GPU not supported in this build.");
-#endif
   }
 }
 
@@ -52,11 +35,7 @@ Tensor randn(std::vector<int> &shape, Device device) {
   if (device == Device::CPU) {
     return operators::cpu::randn(shape);
   } else {
-#ifdef __CUDACC__
     return operators::cuda::randn(shape);
-#else
-    throw std::runtime_error("GPU not supported in this build.");
-#endif
   }
 }
 
@@ -64,11 +43,7 @@ void randn(Tensor &tensor) {
   if (tensor.device == Device::CPU) {
     return operators::cpu::randn(tensor);
   } else {
-#ifdef __CUDACC__
     return operators::cuda::randn(tensor);
-#else
-    throw std::runtime_error("GPU not supported in this build.");
-#endif
   }
 }
 
@@ -77,14 +52,12 @@ void to(Tensor &tensor, Device device) {
     return;
   }
 
-#ifdef __CUDACC__
   if (device == Device::CPU && tensor.device == Device::CUDA) {
     auto temp = empty(tensor.shape, device);
-    operators::cuda::copy(tensor, tensor.device, temp, device);
+    operators::cuda::copy(tensor, temp);
     destroy(tensor);
     tensor = temp;
   }
-#endif
 }
 
 namespace {
@@ -126,11 +99,7 @@ bool equals(Tensor &a, Tensor &b, float epsilon) {
 
 void copy(Tensor &src, Tensor &dst) {
   if (src.device == Device::CUDA || dst.device == Device::CUDA) {
-#ifdef __CUDACC__
     operators::cuda::copy(src, dst);
-#else
-    throw std::runtime_error("GPU not supported in this build.");
-#endif
   } else {
     operators::cpu::copy(src, dst);
   }

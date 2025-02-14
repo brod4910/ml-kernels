@@ -3,7 +3,6 @@
 //
 
 #pragma once
-#include <cstddef>
 #include <mlkl/core/tensor.h>
 
 namespace mlkl::operators::cpu {

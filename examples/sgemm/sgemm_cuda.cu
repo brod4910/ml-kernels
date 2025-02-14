@@ -6,7 +6,6 @@
 #include <cassert>
 #include <cublas_v2.h>
 #include <cuda_runtime_api.h>
-#include <iomanip>
 #include <iostream>
 
 #define CHECK_CUBLAS_STATUS(val) checkCuBLASStatus((val), #val, __FILE__, __LINE__)

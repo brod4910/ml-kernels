@@ -15,13 +15,13 @@ Tensor empty(std::vector<int> &shape) {
   tensor.stride.reserve(tensor.rank);
 
   for (int i = 0; i < tensor.rank; ++i) {
-    tensor.shape[i] = shape[i];
+    tensor.shape.push_back(shape[i]);
   }
 
   if (tensor.rank > 0) {
     tensor.stride[tensor.rank - 1] = 1;
     for (int i = tensor.rank - 2; i >= 0; --i) {
-      tensor.stride[i] = tensor.stride[i + 1] * tensor.shape[i + 1];
+      tensor.stride.push_back(tensor.stride[i + 1] * tensor.shape[i + 1]);
     }
   }
 
