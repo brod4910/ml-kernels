@@ -39,14 +39,6 @@ struct Tensor {
   int numel() {
     return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>());
   }
-
-  void calculate_stride() {
-    int stride = 1;
-    for (int i = rank - 1; i >= 0; --i) {
-      this->stride[i] = stride;
-      stride *= shape[i];
-    }
-  }
 };
 
 }// namespace mlkl

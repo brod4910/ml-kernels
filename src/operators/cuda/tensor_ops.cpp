@@ -5,9 +5,6 @@
 #include <curand.h>
 
 namespace mlkl::operators::cuda {
-namespace kernel {
-}// namespace kernel
-
 Tensor empty(std::vector<int> &shape) {
   // Zero‐initialize the Tensor
   Tensor tensor;
@@ -18,10 +15,15 @@ Tensor empty(std::vector<int> &shape) {
   tensor.stride.reserve(tensor.rank);
 
   for (int i = 0; i < tensor.rank; ++i) {
-    tensor.shape[i] = shape[i];
+    tensor.shape.push_back(shape[i]);
   }
 
-  tensor.calculate_stride();
+  if (tensor.rank > 0) {
+    tensor.stride[tensor.rank - 1] = 1;
+    for (int i = tensor.rank - 2; i >= 0; --i) {
+      tensor.stride.push_back(tensor.stride[i + 1] * tensor.shape[i + 1]);
+    }
+  }
 
   cudaMalloc(&tensor.data, tensor.numel());
   CHECK_CUDA_ERROR();

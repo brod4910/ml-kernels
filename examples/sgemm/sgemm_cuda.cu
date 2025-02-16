@@ -91,10 +91,9 @@ void test_kernel(const char *kernel_name,
   cudaEventDestroy(stop);
 }
 
-void sgemm_cuda(int M, int N, int K, float alpha, float beta) {
+void sgemm_cuda(int M, int N, int K, float alpha, float beta, int num_runs) {
   cublasHandle_t handle;
   cublasCreate(&handle);
-  int num_runs = 1000;
 
   auto cublas_kernel = [&](mlkl::Tensor &a, mlkl::Tensor &b, mlkl::Tensor &c, float alpha, float beta) {
     int M = c.shape[0];

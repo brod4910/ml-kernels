@@ -11,7 +11,7 @@
 template<typename Kernel>
 void test_kernel(const char *kernel_name,
                  Kernel kernel,
-                 int M, int N, int num_runs = 10) {
+                 int M, int N, int num_runs) {
   std::vector<int>
     shape{M, N};
   auto allocator = mlkl::TensorAllocator();
@@ -83,9 +83,7 @@ void test_kernel(const char *kernel_name,
   cudaEventDestroy(stop);
 }
 
-void softmax_cuda(int M, int N) {
-  int num_runs = 1000;
-
+void softmax_cuda(int M, int N, int num_runs) {
   // Test custom kernels
   test_kernel("Softmax Kernel V1", [&](mlkl::Tensor &a, mlkl::Tensor &b, int dim) { mlkl::operators::cuda::softmax(a, b, dim); }, M, N, num_runs);
 }

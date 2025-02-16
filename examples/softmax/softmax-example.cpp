@@ -1,6 +1,7 @@
 #include "softmax_cpu.h"
 #include "softmax_cuda.h"
 
+#include <iostream>
 #include <tuple>
 #include <vector>
 
@@ -15,7 +16,7 @@ int main() {
   // clang-format on
   for (const auto &[M, N] : matrix_sizes) {
     std::cout << "CPU" << std::endl;
-    softmax_cpu(M, N);
+    softmax_cpu(M, N, 1);
 
     std::cout << "CUDA" << std::endl;
     softmax_cuda(M, N);
