@@ -1,94 +1,73 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(
-        ml_kernels
-        VERSION 0.0.1
-        DESCRIPTION "A collection of machine learning kernels for CPU, AVX and CUDA"
-        HOMEPAGE_URL "https://github.com/brod4910/ml-kernels"
-        LANGUAGES CXX
+    ml_kernels
+    VERSION 0.0.1
+    DESCRIPTION "A collection of machine learning kernels for CPU, AVX, and CUDA"
+    HOMEPAGE_URL "https://github.com/brod4910/ml-kernels"
+    LANGUAGES CXX CUDA
 )
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
-option(BUILD_CUDA "Build CUDA library version" OFF)
+option(CUDA_ARCH "CUDA architecture" "86")
 option(BUILD_AVX "Build AVX library version" OFF)
 
-# ---- Packages ----
+# ---- Find Packages ----
 find_package(fmt REQUIRED)
-#find_package(spdlog REQUIRED)
+find_package(CUDAToolkit REQUIRED)
 
-#set(PACKAGES fmt::fmt spdlog::spdlog)
 set(PACKAGES fmt::fmt)
 
-# ---- AVX Build  ----
-if(${BUILD_AVX})
-    set(AVX_LIB_NAME ${PROJECT_NAME}_avx)
-    file(GLOB_RECURSE AVX_SRC_FILES ${PROJECT_SOURCE_DIR}/src/avx/*.cpp)
-    file(GLOB_RECURSE AVX_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/avx/*.h)
+# ---- Collect Source Files ----
+file(GLOB_RECURSE CORE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/core/*.cpp)
+file(GLOB_RECURSE CORE_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/core/*.h)
+file(GLOB_RECURSE CPU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/operators/cpu/*.cpp)
+file(GLOB_RECURSE CPU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/operators/cpu/*.h)
+file(GLOB_RECURSE CU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/operators/cuda/*.cu)
+file(GLOB_RECURSE CUDA_SRC_FILES ${PROJECT_SOURCE_DIR}/src/operators/cuda/*.cpp)
+file(GLOB_RECURSE CUDA_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/operators/cuda/*.h)
 
-    add_library(${AVX_LIB_NAME} SHARED ${AVX_SRC_FILES} ${AVX_HDR_FILES})
+# ---- Define Compiler Options ----
+set(CXX_DEBUG_OPTS $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>)
+set(CXX_RELWITHDEBINFO_OPTS $<$<CONFIG:RelWithDebInfo>:-O2 -g -DNDEBUG>)
+set(CXX_RELEASE_OPTS $<$<CONFIG:Release>:-O3 -DNDEBUG -Wall -std=c++17 -ffast-math>)
+set(CUDA_DEBUG_OPTS $<$<CONFIG:Debug>:-G -O0>)
+set(CUDA_RELWITHDEBINFO_OPTS $<$<CONFIG:RelWithDebInfo>:-G -O2>)
+set(CUDA_RELEASE_OPTS $<$<CONFIG:Release>:-O3 -lineinfo>)
 
-    target_compile_options(${AVX_LIB_NAME} PUBLIC -Wall -std=c++17 -O3 -mavx2 -mavx -march=native)
-    target_link_libraries(${AVX_LIB_NAME} PRIVATE ${PACKAGES})
-    target_include_directories(
-            ${AVX_LIB_NAME}
-            PUBLIC
-            "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
-    )
-endif()
-
-# ---- CUDA Build  ----
-
-if(${BUILD_CUDA})
-    set(CUDA_LIB_NAME ${PROJECT_NAME}_cuda)
-    option(CUDA_ARCH "CUDA architecture" "86")
-    # Find CUDA package and include directories
-    enable_language(CUDA)
-    find_package(CUDAToolkit)
-
-    # Specify the CUDA compute capability
-    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode=arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH})  # Change the compute capability as needed
-
-    # Add the CUDA sources to the project
-    file(GLOB_RECURSE CU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/cuda/*.cpp)
-    file(GLOB_RECURSE CUDA_SRC_FILES ${PROJECT_SOURCE_DIR}/src/cuda/*.cu)
-    file(GLOB_RECURSE CU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cuda/*.h)
-    file(GLOB_RECURSE CUDA_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cuda/*.cuh)
-    add_library(${CUDA_LIB_NAME} SHARED ${CU_SRC_FILES} ${CU_HDR_FILES} ${CUDA_SRC_FILES} ${CUDA_HDR_FILES})
-    set_property(TARGET ${CUDA_LIB_NAME} PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH})
-    target_link_libraries(${CUDA_LIB_NAME} PRIVATE ${PACKAGES} CUDA::cudart CUDA::cuda_driver)
-    set_target_properties(${CUDA_LIB_NAME} PROPERTIES LINKER_LANGUAGE CUDA)
-    
-    target_compile_options(${CUDA_LIB_NAME} PRIVATE 
-        $<$<COMPILE_LANGUAGE:CUDA>:
-            $<$<CONFIG:Debug>:-G -O0>
-            $<$<CONFIG:RelWithDebInfo>:-G -O2>
-            $<$<CONFIG:Release>:-O3 -lineinfo>
-        >
-    )
-
-    target_include_directories(
-            ${CUDA_LIB_NAME}
-            PUBLIC
-            "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
-    )
-endif()
-
-# ---- CPU Build  ----
-set(CPU_LIB_NAME ${PROJECT_NAME}_cpu)
-file(GLOB_RECURSE CPU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/cpu/*.cpp)
-file(GLOB_RECURSE CPU_HDR_FILES ${PROJECT_SOURCE_DIR}/include/mlkl/cpu/*.h)
-
-add_library(${CPU_LIB_NAME} SHARED ${CPU_SRC_FILES} ${CPU_HDR_FILES})
-target_link_libraries(${CPU_LIB_NAME} PRIVATE ${PACKAGES})
-target_include_directories(
-        ${CPU_LIB_NAME}
-        PUBLIC
-        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+# ---- Create a Combined CPU + CUDA Library ----
+add_library(ml_kernels SHARED 
+    ${CORE_SRC_FILES} ${CORE_HDR_FILES}
+    ${CPU_SRC_FILES} ${CPU_HDR_FILES}
+    ${CUDA_SRC_FILES} ${CUDA_HDR_FILES} ${CU_SRC_FILES}
 )
-target_compile_options(${CPU_LIB_NAME} PRIVATE 
-    $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
-    $<$<CONFIG:Release>:-O3 -DNDEBUG -Wall -std=c++17 -O3 -ffast-math>
+
+# Ensure `.cu` files are compiled as CUDA code
+set_source_files_properties(${CUDA_SRC_FILES} PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(${CUDA_HDR_FILES} PROPERTIES LANGUAGE CUDA)
+
+# Enable CUDA features
+set_target_properties(ml_kernels PROPERTIES CUDA_ARCHITECTURES ${CUDA_ARCH})
+set_target_properties(ml_kernels PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(ml_kernels PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(ml_kernels PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+
+# Apply compile options
+target_compile_options(ml_kernels PRIVATE 
+    $<$<COMPILE_LANGUAGE:CXX>:${CXX_DEBUG_OPTS} ${CXX_RELWITHDEBINFO_OPTS} ${CXX_RELEASE_OPTS}>
+    $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_DEBUG_OPTS} ${CUDA_RELWITHDEBINFO_OPTS} ${CUDA_RELEASE_OPTS}>
 )
+
+# Include directories
+target_include_directories(ml_kernels PUBLIC 
+    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+)
+
+# Link CUDA and other dependencies
+target_link_libraries(ml_kernels PUBLIC ${PACKAGES} CUDA::cudart CUDA::cuda_driver CUDA::curand)
 
 add_subdirectory(examples)

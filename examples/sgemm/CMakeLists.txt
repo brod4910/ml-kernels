@@ -1,30 +1,25 @@
-set(HEADERS sgemm_cpu.h)
+enable_language(CUDA)
+find_package(CUDAToolkit REQUIRED)
 
-if (${BUILD_AVX})
-    set(HEADERS ${HEADERS} sgemm_avx.h)
-endif ()
+set(SOURCES sgemm-example.cpp sgemm_cpu.h sgemm_cpu.cpp sgemm_cuda.h sgemm_cuda.cu)
 
-if (${BUILD_CUDA})
-    set(HEADERS ${HEADERS} sgemm_cuda.h sgemm_cuda.cu)
-endif()
-    
-add_executable(sgemm-example sgemm-example.cpp ${HEADERS})
-    
-target_include_directories(sgemm-example PUBLIC ${PROJECT_SOURCE_DIR}/include)
+# Create the executable
+add_executable(sgemm-example ${SOURCES})
 
-if (${BUILD_AVX})
-    target_link_libraries(sgemm-example PRIVATE ${PROJECT_NAME}_avx)
-endif()
+# Ensure `.cu` files are compiled as CUDA
+set_source_files_properties(sgemm_cuda.cu PROPERTIES LANGUAGE CUDA)
 
-if (${BUILD_CUDA})
-    enable_language(CUDA)
-    find_package(CUDAToolkit)
-    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode=arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH})
-    target_compile_options(sgemm-example PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-D__CUDA__>)
-    target_compile_options(sgemm-example PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-D__CUDA__>)
-    set_property(TARGET sgemm-example PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH})
-    target_link_libraries(sgemm-example PRIVATE ${PROJECT_NAME}_cuda CUDA::cudart CUDA::cuda_driver CUDA::cublas)
-    # Specify the CUDA compute capability
-endif()
+# Enable proper CUDA compilation and linking
+set_property(TARGET sgemm-example PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+set_property(TARGET sgemm-example PROPERTY CUDA_ARCHITECTURES ${CUDA_ARCH})
 
-target_link_libraries(sgemm-example PRIVATE ${PROJECT_NAME}_cpu)
+# Apply compilation options
+target_compile_options(sgemm-example PRIVATE 
+    $<$<COMPILE_LANGUAGE:CXX>:${CXX_DEBUG_OPTS} ${CXX_RELWITHDEBINFO_OPTS} ${CXX_RELEASE_OPTS}>
+)
+target_compile_options(sgemm-example PRIVATE 
+    $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_DEBUG_OPTS} ${CUDA_RELWITHDEBINFO_OPTS} ${CUDA_RELEASE_OPTS}>
+)
+
+# Link with CUDA and the project library
+target_link_libraries(sgemm-example PRIVATE ${PROJECT_NAME} CUDA::cublas CUDA::cudart)

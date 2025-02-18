@@ -8,11 +8,10 @@
 #include "sgemm_avx.h"
 #endif
 
-#ifdef __CUDA__
-#include "sgemm_cuda.h"
-#endif
-
 #include "sgemm_cpu.h"
+#include "sgemm_cuda.h"
+
+#include <iostream>
 #include <tuple>
 #include <vector>
 
@@ -28,16 +27,11 @@ int main() {
 
   float alpha = 1.0;
   float beta = 0.0;
-  for (const auto [M, N, K] : matrix_sizes) {
-//   std::cout << "CPU" << std::endl;
-//   sgemm_cpu(M, N, K, alpha, beta);
-#ifdef __AVX2__
-    std::cout << "AVX2" << std::endl;
-    sgemm_avx(M, N, K, alpha, beta);
-#endif
-#ifdef __CUDA__
+  for (const auto &[M, N, K] : matrix_sizes) {
+    std::cout << "CPU" << std::endl;
+    sgemm_cpu(M, N, K, alpha, beta, 1);
+
     std::cout << "CUDA" << std::endl;
     sgemm_cuda(M, N, K, alpha, beta);
-#endif
   }
 }
