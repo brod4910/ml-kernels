@@ -1,9 +1,9 @@
 #pragma once
+#include <cstddef>
+#include <vector>
+
 #include <cuda_bf16.h>
 #include <cuda_fp16.h>
-
-#include <functional>
-#include <numeric>
 
 using fp32 = float;
 using bf16 = __nv_bfloat16;
@@ -32,13 +32,11 @@ struct Tensor {
   Device device = Device::CPU;
   DType dtype = DType::F32;
 
-  int num_bytes() {
-    return numel() * sizeof(*data);
-  }
+  size_t num_bytes();
 
-  int numel() {
-    return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>());
-  }
+  size_t numel();
+
+  void to(Device device);
 };
 
 }// namespace mlkl

@@ -1,5 +1,6 @@
 #include <cmath>
 
+#include <cstddef>
 #include <mlkl/core/tensor.h>
 #include <mlkl/operators/cpu/tensor_ops.h>
 #include <mlkl/operators/cuda/tensor_ops.h>
@@ -52,12 +53,10 @@ void to(Tensor &tensor, Device device) {
     return;
   }
 
-  if (device == Device::CPU && tensor.device == Device::CUDA) {
-    auto temp = empty(tensor.shape, device);
-    operators::cuda::copy(tensor, temp);
-    destroy(tensor);
-    tensor = temp;
-  }
+  auto temp = empty(tensor.shape, device);
+  copy(tensor, temp);
+  destroy(tensor);
+  tensor = temp;
 }
 
 namespace {
@@ -87,7 +86,7 @@ bool equals(Tensor &a, Tensor &b, float epsilon) {
 
   float diff = .0f;
 
-  for (int i = 0; i < a.numel(); ++i) {
+  for (size_t i = 0; i < a.numel(); ++i) {
     diff = fabs((double) a.data[i] - (double) b.data[i]);
     if (diff > epsilon) {
       return false;

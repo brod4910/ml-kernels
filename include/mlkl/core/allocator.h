@@ -22,7 +22,9 @@ struct TensorAllocator {
   }
 
   Tensor randn(std::vector<int> &shape, Device device) {
-    return mlkl::randn(shape, device);
+    auto tensor = mlkl::randn(shape, device);
+    tensors.push_back(tensor);
+    return tensor;
   }
 
   Tensor copy(Tensor &tensor, Device device) {

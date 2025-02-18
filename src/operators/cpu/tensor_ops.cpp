@@ -1,5 +1,6 @@
 #include "mlkl/core/tensor.h"
-#include <algorithm>
+
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <random>
@@ -31,7 +32,7 @@ Tensor empty(std::vector<int> &shape) {
 }
 
 void fill(Tensor &tensor, int value) {
-  for (int i = 0; i < tensor.numel(); ++i) {
+  for (size_t i = 0; i < tensor.numel(); ++i) {
     tensor.data[i] = value;
   }
 }
@@ -50,7 +51,7 @@ void randn(float *data, size_t numel) {
   std::mt19937 gen(rd());
   std::uniform_real_distribution<float> dist(0.0f, 1.0f);
 
-  for (int i = 0; i < numel; ++i) {
+  for (size_t i = 0; i < numel; ++i) {
     data[i] = dist(gen);
   }
 }

@@ -1,3 +1,4 @@
+#include "mlkl/core/tensor.h"
 #include <mlkl/operators/cuda/tensor_ops.h>
 #include <mlkl/utils/device.h>
 
@@ -8,7 +9,7 @@ namespace mlkl::operators::cuda {
 Tensor empty(std::vector<int> &shape) {
   // Zero‐initialize the Tensor
   Tensor tensor;
-
+  tensor.device = Device::CUDA;
   tensor.rank = shape.size();
 
   tensor.shape.reserve(tensor.rank);
@@ -25,26 +26,26 @@ Tensor empty(std::vector<int> &shape) {
     }
   }
 
-  cudaMalloc(&tensor.data, tensor.numel());
+  cudaMalloc(&tensor.data, tensor.num_bytes());
   CHECK_CUDA_ERROR();
 
   return tensor;
 }
 
 void fill(Tensor &tensor, int value) {
-  cudaMemset(tensor.data, value, tensor.numel());
+  cudaMemset(tensor.data, value, tensor.num_bytes());
   CHECK_CUDA_ERROR();
 }
 
 void copy(Tensor &src, Tensor &dst) {
   if (src.device == mlkl::Device::CUDA && dst.device == mlkl::Device::CPU) {
-    cudaMemcpy(dst.data, src.data, src.numel(), cudaMemcpyDeviceToHost);
+    cudaMemcpy(dst.data, src.data, dst.num_bytes(), cudaMemcpyDeviceToHost);
   } else if (src.device == mlkl::Device::CPU && dst.device == mlkl::Device::CUDA) {
-    cudaMemcpy(dst.data, src.data, src.numel(), cudaMemcpyHostToDevice);
+    cudaMemcpy(dst.data, src.data, dst.num_bytes(), cudaMemcpyHostToDevice);
   } else if (src.device == mlkl::Device::CUDA && dst.device == mlkl::Device::CUDA) {
-    cudaMemcpy(dst.data, src.data, src.numel(), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(dst.data, src.data, dst.num_bytes(), cudaMemcpyDeviceToDevice);
   } else {
-    cudaMemcpy(dst.data, src.data, src.numel(), cudaMemcpyHostToHost);
+    cudaMemcpy(dst.data, src.data, dst.num_bytes(), cudaMemcpyHostToHost);
   }
 
   CHECK_CUDA_ERROR();
@@ -52,6 +53,7 @@ void copy(Tensor &src, Tensor &dst) {
 
 void destroy(Tensor &tensor) {
   cudaFree(tensor.data);
+  CHECK_CUDA_ERROR();
 }
 
 namespace {
@@ -72,8 +74,6 @@ Tensor randn(std::vector<int> &shape) {
   auto tensor = empty(shape);
 
   randn(tensor.data, tensor.numel());
-
-  CHECK_CUDA_ERROR();
 
   return tensor;
 }

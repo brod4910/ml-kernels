@@ -1,3 +1,4 @@
+#include "mlkl/core/tensor.h"
 #include "mlkl/core/tensor_ops.h"
 #include <mlkl/mlkl.h>
 #include <mlkl/operators/cuda/gemm.h>
@@ -26,19 +27,20 @@ void test_kernel(const char *kernel_name,
   std::vector<int> s2{K, N};
   std::vector<int> s3{M, N};
 
-  auto a_d = allocator.randn(s1, mlkl::Device::CUDA);
-  auto b_d = allocator.randn(s2, mlkl::Device::CUDA);
-  auto c_d = allocator.empty(s3, mlkl::Device::CUDA);
+  auto a_ref = allocator.randn(s1, mlkl::Device::CPU);
+  auto b_ref = allocator.randn(s2, mlkl::Device::CPU);
+  auto c_ref = allocator.empty(s3, mlkl::Device::CPU);
+  mlkl::fill(c_ref, 0);
 
-  auto a_cpu = allocator.empty(s1, mlkl::Device::CPU);
-  auto b_cpu = allocator.empty(s2, mlkl::Device::CPU);
-  auto c_cpu = allocator.empty(s3, mlkl::Device::CPU);
-  auto ref_matrix = allocator.empty(s3, mlkl::Device::CPU);
+  auto a = allocator.empty(s1, mlkl::Device::CUDA);
+  auto b = allocator.empty(s2, mlkl::Device::CUDA);
+  auto c = allocator.empty(s3, mlkl::Device::CUDA);
 
-  mlkl::copy(a_d, a_cpu);
-  mlkl::copy(b_d, b_cpu);
+  mlkl::copy(a_ref, a);
+  mlkl::copy(b_ref, b);
+  mlkl::copy(c_ref, c);
 
-  mlkl::sgemm(a_cpu, b_cpu, c_cpu, alpha, beta, mlkl::Device::CPU);
+  mlkl::sgemm(a_ref, b_ref, c_ref, alpha, beta, mlkl::Device::CPU);
 
   cudaEvent_t start, stop;
   cudaEventCreate(&start);
@@ -48,17 +50,17 @@ void test_kernel(const char *kernel_name,
 
   // warm-up
   for (int i = 0; i < 10; ++i) {
-    kernel(a_d, b_d, c_d, alpha, beta);
+    kernel(a, b, c, alpha, beta);
     CHECK_CUDA_ERROR();
   }
 
   for (int i = 0; i < num_runs; ++i) {
-    mlkl::fill(c_d, 0);
+    mlkl::fill(c, 0);
     CHECK_CUDA_ERROR();
 
     cudaEventRecord(start);
 
-    kernel(a_d, b_d, c_d, alpha, beta);
+    kernel(a, b, c, alpha, beta);
     CHECK_CUDA_ERROR();
 
     cudaDeviceSynchronize();
@@ -70,11 +72,11 @@ void test_kernel(const char *kernel_name,
     total_duration += time_elapsed;
   }
 
-  mlkl::to(c_d, mlkl::Device::CPU);
+  c.to(mlkl::Device::CPU);
 
   CHECK_CUDA_ERROR();
 
-  if (!mlkl::equals(c_d, ref_matrix)) {
+  if (!mlkl::equals(c, c_ref, 1e-3)) {
     std::cerr << "Kernel " << kernel_name << " produced incorrect results." << std::endl;
   }
 
