@@ -6,15 +6,15 @@
 #include <mlkl/core/tensor.h>
 
 namespace mlkl::operators::cpu {
-Tensor empty(std::vector<int> &shape);
+Tensor *empty(std::vector<int> &shape);
 
-void fill(Tensor &tensor, int value);
+void fill(Tensor *tensor, int value);
 
-void copy(Tensor &src, Tensor &dst);
+void copy(Tensor *src, Tensor *dst);
 
-void destroy(Tensor &tensor);
+void destroy(Tensor *tensor);
 
-Tensor randn(std::vector<int> &shape);
+Tensor *randn(std::vector<int> &shape);
 
-void randn(Tensor &tensor);
+void randn(Tensor *tensor);
 }// namespace mlkl::operators::cpu

@@ -18,13 +18,13 @@ void test_kernel(const char *kernel_name,
 
   std::vector<int> s1{M, N};
 
-  auto a_d = allocator.randn(s1, mlkl::Device::CUDA);
-  auto a_cpu = allocator.empty(s1, mlkl::Device::CPU);
-  auto b = allocator.randn(s1, mlkl::Device::CUDA);
+  auto *a_d = allocator.randn(s1, mlkl::Device::CUDA);
+  auto *a_cpu = allocator.empty(s1, mlkl::Device::CPU);
+  auto *b = allocator.randn(s1, mlkl::Device::CUDA);
 
   mlkl::copy(a_d, a_cpu);
 
-  auto ref_cpu = allocator.empty(s1, mlkl::Device::CPU);
+  auto *ref_cpu = allocator.empty(s1, mlkl::Device::CPU);
 
   mlkl::softmax(a_cpu, ref_cpu, 0, mlkl::Device::CPU);
 
@@ -58,7 +58,7 @@ void test_kernel(const char *kernel_name,
     total_duration += time_elapsed;
   }
 
-  mlkl::to(b, mlkl::Device::CPU);
+  b->to(mlkl::Device::CPU);
   CHECK_CUDA_ERROR();
 
   if (!mlkl::equals(b, ref_cpu)) {
@@ -85,5 +85,5 @@ void test_kernel(const char *kernel_name,
 
 void softmax_cuda(int M, int N, int num_runs) {
   // Test custom kernels
-  test_kernel("Softmax Kernel V1", [&](mlkl::Tensor &a, mlkl::Tensor &b, int dim) { mlkl::operators::cuda::softmax(a, b, dim); }, M, N, num_runs);
+  test_kernel("Softmax Kernel V1", [&](mlkl::Tensor *a, mlkl::Tensor *b, int dim) { mlkl::operators::cuda::softmax(a, b, dim); }, M, N, num_runs);
 }

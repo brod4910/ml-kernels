@@ -8,7 +8,7 @@
 #include <mlkl/core/tensor_ops.h>
 
 namespace mlkl {
-Tensor empty(std::vector<int> &shape, Device device) {
+Tensor *empty(std::vector<int> &shape, Device device) {
   if (device == mlkl::Device::CPU) {
     return operators::cpu::empty(shape);
   } else {
@@ -16,23 +16,23 @@ Tensor empty(std::vector<int> &shape, Device device) {
   }
 }
 
-void fill(Tensor &tensor, int value) {
-  if (tensor.device == mlkl::Device::CPU) {
+void fill(Tensor *tensor, int value) {
+  if (tensor->device == mlkl::Device::CPU) {
     return operators::cpu::fill(tensor, value);
   } else {
     return operators::cuda::fill(tensor, value);
   }
 }
 
-void destroy(Tensor &tensor) {
-  if (tensor.device == mlkl::Device::CPU) {
+void destroy(Tensor *tensor) {
+  if (tensor->device == mlkl::Device::CPU) {
     return operators::cpu::destroy(tensor);
   } else {
     return operators::cuda::destroy(tensor);
   }
 }
 
-Tensor randn(std::vector<int> &shape, Device device) {
+Tensor *randn(std::vector<int> &shape, Device device) {
   if (device == Device::CPU) {
     return operators::cpu::randn(shape);
   } else {
@@ -40,33 +40,22 @@ Tensor randn(std::vector<int> &shape, Device device) {
   }
 }
 
-void randn(Tensor &tensor) {
-  if (tensor.device == Device::CPU) {
+void randn(Tensor *tensor) {
+  if (tensor->device == Device::CPU) {
     return operators::cpu::randn(tensor);
   } else {
     return operators::cuda::randn(tensor);
   }
 }
 
-void to(Tensor &tensor, Device device) {
-  if (tensor.device == device) {
-    return;
-  }
-
-  auto temp = empty(tensor.shape, device);
-  copy(tensor, temp);
-  destroy(tensor);
-  tensor = temp;
-}
-
 namespace {
-bool same_shape(Tensor &a, Tensor &b) {
-  if (a.rank != b.rank) {
+bool same_shape(Tensor *a, Tensor *b) {
+  if (a->rank != b->rank) {
     return false;
   }
 
-  for (int i = 0; i < a.rank; ++i) {
-    if (a.shape[i] != b.shape[i]) {
+  for (int i = 0; i < a->rank; ++i) {
+    if (a->shape[i] != b->shape[i]) {
       return false;
     }
   }
@@ -75,19 +64,19 @@ bool same_shape(Tensor &a, Tensor &b) {
 }
 }// namespace
 
-bool equals(Tensor &a, Tensor &b, float epsilon) {
-  if (a.device != Device::CPU || b.device != Device::CPU) {
+bool equals(Tensor *a, Tensor *b, float epsilon) {
+  if (a->device != Device::CPU || b->device != Device::CPU) {
     return false;
   }
 
-  if (a.numel() != b.numel() || !same_shape(a, b)) {
+  if (a->numel() != b->numel() || !same_shape(a, b)) {
     return false;
   }
 
   float diff = .0f;
 
-  for (size_t i = 0; i < a.numel(); ++i) {
-    diff = fabs((double) a.data[i] - (double) b.data[i]);
+  for (size_t i = 0; i < a->numel(); ++i) {
+    diff = fabs((double) a->data[i] - (double) b->data[i]);
     if (diff > epsilon) {
       return false;
     }
@@ -96,8 +85,8 @@ bool equals(Tensor &a, Tensor &b, float epsilon) {
   return true;
 }
 
-void copy(Tensor &src, Tensor &dst) {
-  if (src.device == Device::CUDA || dst.device == Device::CUDA) {
+void copy(Tensor *src, Tensor *dst) {
+  if (src->device == Device::CUDA || dst->device == Device::CUDA) {
     operators::cuda::copy(src, dst);
   } else {
     operators::cpu::copy(src, dst);

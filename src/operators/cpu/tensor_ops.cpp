@@ -9,40 +9,41 @@
 #include <mlkl/operators/cpu/tensor_ops.h>
 
 namespace mlkl::operators::cpu {
-Tensor empty(std::vector<int> &shape) {
-  Tensor tensor;
-  tensor.rank = shape.size();
-  tensor.shape.reserve(tensor.rank);
-  tensor.stride.reserve(tensor.rank);
+Tensor *empty(std::vector<int> &shape) {
+  Tensor *tensor = new Tensor;
+  tensor->rank = shape.size();
+  tensor->shape.reserve(tensor->rank);
+  tensor->stride.reserve(tensor->rank);
 
-  for (int i = 0; i < tensor.rank; ++i) {
-    tensor.shape.push_back(shape[i]);
+  for (int i = 0; i < tensor->rank; ++i) {
+    tensor->shape.push_back(shape[i]);
   }
 
-  if (tensor.rank > 0) {
-    tensor.stride[tensor.rank - 1] = 1;
-    for (int i = tensor.rank - 2; i >= 0; --i) {
-      tensor.stride.push_back(tensor.stride[i + 1] * tensor.shape[i + 1]);
+  if (tensor->rank > 0) {
+    tensor->stride[tensor->rank - 1] = 1;
+    for (int i = tensor->rank - 2; i >= 0; --i) {
+      tensor->stride.push_back(tensor->stride[i + 1] * tensor->shape[i + 1]);
     }
   }
 
-  tensor.data = reinterpret_cast<decltype(tensor.data)>(malloc(tensor.num_bytes()));
+  tensor->data = reinterpret_cast<decltype(tensor->data)>(malloc(tensor->num_bytes()));
 
   return tensor;
 }
 
-void fill(Tensor &tensor, int value) {
-  for (size_t i = 0; i < tensor.numel(); ++i) {
-    tensor.data[i] = value;
+void fill(Tensor *tensor, int value) {
+  for (size_t i = 0; i < tensor->numel(); ++i) {
+    tensor->data[i] = value;
   }
 }
 
-void copy(Tensor &src, Tensor &dst) {
-  memcpy(dst.data, src.data, dst.num_bytes());
+void copy(Tensor *src, Tensor *dst) {
+  memcpy(dst->data, src->data, dst->num_bytes());
 }
 
-void destroy(Tensor &tensor) {
-  free(tensor.data);
+void destroy(Tensor *tensor) {
+  free(tensor->data);
+  delete tensor;
 }
 
 namespace {
@@ -58,15 +59,15 @@ void randn(float *data, size_t numel) {
 
 }// namespace
 
-Tensor randn(std::vector<int> &shape) {
+Tensor *randn(std::vector<int> &shape) {
   auto tensor = empty(shape);
 
-  randn(tensor.data, tensor.numel());
+  randn(tensor->data, tensor->numel());
 
   return tensor;
 }
 
-void randn(Tensor &tensor) {
-  randn(tensor.data, tensor.numel());
+void randn(Tensor *tensor) {
+  randn(tensor->data, tensor->numel());
 }
 }// namespace mlkl::operators::cpu

@@ -48,7 +48,7 @@ void softmax_2d_v1(float *input, float *output, int dim, std::vector<int> &shape
 }
 }// namespace launch
 
-void softmax(Tensor &input, Tensor &output, int dim) {
-  launch::softmax_2d_v1(input.data, output.data, dim, output.shape);
+void softmax(Tensor *input, Tensor *output, int dim) {
+  launch::softmax_2d_v1(input->data, output->data, dim, output->shape);
 }
 }// namespace mlkl::operators::cuda

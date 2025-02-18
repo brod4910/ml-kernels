@@ -18,7 +18,7 @@ void sgemm(const float *__restrict__ a, const float alpha,
 }
 }// namespace
 
-void sgemm(Tensor &a, Tensor &b, Tensor &c, float alpha, float beta) {
-  sgemm(a.data, alpha, b.data, beta, c.data, c.shape[0], c.shape[1], a.shape[1]);
+void sgemm(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
+  sgemm(a->data, alpha, b->data, beta, c->data, c->shape[0], c->shape[1], a->shape[1]);
 }
 }// namespace mlkl::operators::cpu

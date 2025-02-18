@@ -14,6 +14,15 @@ size_t Tensor::numel() {
 }
 
 void Tensor::to(Device device) {
-  mlkl::to(*this, device);
+  if (this->device == device) {
+    return;
+  }
+
+  auto *temp = empty(shape, device);
+  copy(this, temp);
+  destroy(this);
+
+  this->device = temp->device;
+  this->data = temp->data;
 }
 }// namespace mlkl

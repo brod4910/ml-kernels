@@ -4,19 +4,17 @@
 #include <vector>
 
 namespace mlkl {
-Tensor empty(std::vector<int> &shape, Device device);
+Tensor *empty(std::vector<int> &shape, Device device);
 
-void fill(Tensor &tensor, int value);
+void fill(Tensor *tensor, int value);
 
-void copy(Tensor &src, Tensor &dst);
+void copy(Tensor *src, Tensor *dst);
 
-void destroy(Tensor &tensor);
+void destroy(Tensor *tensor);
 
-Tensor randn(std::vector<int> &shape, Device device);
+Tensor *randn(std::vector<int> &shape, Device device);
 
-void randn(Tensor &tensor);
+void randn(Tensor *tensor);
 
-void to(Tensor &tensor, Device device);
-
-bool equals(Tensor &a, Tensor &b, float epsilon = 1e-6);
+bool equals(Tensor *a, Tensor *b, float epsilon = 1e-6);
 }// namespace mlkl

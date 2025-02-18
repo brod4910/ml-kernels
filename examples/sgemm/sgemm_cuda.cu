@@ -27,14 +27,14 @@ void test_kernel(const char *kernel_name,
   std::vector<int> s2{K, N};
   std::vector<int> s3{M, N};
 
-  auto a_ref = allocator.randn(s1, mlkl::Device::CPU);
-  auto b_ref = allocator.randn(s2, mlkl::Device::CPU);
-  auto c_ref = allocator.empty(s3, mlkl::Device::CPU);
+  auto *a_ref = allocator.randn(s1, mlkl::Device::CPU);
+  auto *b_ref = allocator.randn(s2, mlkl::Device::CPU);
+  auto *c_ref = allocator.empty(s3, mlkl::Device::CPU);
   mlkl::fill(c_ref, 0);
 
-  auto a = allocator.empty(s1, mlkl::Device::CUDA);
-  auto b = allocator.empty(s2, mlkl::Device::CUDA);
-  auto c = allocator.empty(s3, mlkl::Device::CUDA);
+  auto *a = allocator.empty(s1, mlkl::Device::CUDA);
+  auto *b = allocator.empty(s2, mlkl::Device::CUDA);
+  auto *c = allocator.empty(s3, mlkl::Device::CUDA);
 
   mlkl::copy(a_ref, a);
   mlkl::copy(b_ref, b);
@@ -56,7 +56,6 @@ void test_kernel(const char *kernel_name,
 
   for (int i = 0; i < num_runs; ++i) {
     mlkl::fill(c, 0);
-    CHECK_CUDA_ERROR();
 
     cudaEventRecord(start);
 
@@ -72,9 +71,7 @@ void test_kernel(const char *kernel_name,
     total_duration += time_elapsed;
   }
 
-  c.to(mlkl::Device::CPU);
-
-  CHECK_CUDA_ERROR();
+  c->to(mlkl::Device::CPU);
 
   if (!mlkl::equals(c, c_ref, 1e-3)) {
     std::cerr << "Kernel " << kernel_name << " produced incorrect results." << std::endl;
@@ -97,21 +94,21 @@ void sgemm_cuda(int M, int N, int K, float alpha, float beta, int num_runs) {
   cublasHandle_t handle;
   cublasCreate(&handle);
 
-  auto cublas_kernel = [&](mlkl::Tensor &a, mlkl::Tensor &b, mlkl::Tensor &c, float alpha, float beta) {
-    int M = c.shape[0];
-    int N = c.shape[1];
-    int K = a.shape[1];
-    CHECK_CUBLAS_STATUS(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha, b.data, N, a.data, K, &beta, c.data, N));
+  auto cublas_kernel = [&](mlkl::Tensor *a, mlkl::Tensor *b, mlkl::Tensor *c, float alpha, float beta) {
+    int M = c->shape[0];
+    int N = c->shape[1];
+    int K = a->shape[1];
+    CHECK_CUBLAS_STATUS(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha, b->data, N, a->data, K, &beta, c->data, N));
   };
   // Test CUBLAS
   test_kernel("CUBLAS", cublas_kernel, M, N, K, alpha, beta, num_runs);
 
   // Test custom kernels
-  test_kernel("SGEMM Kernel V2", [&](mlkl::Tensor &a, mlkl::Tensor &b, mlkl::Tensor &c, float alpha, float beta) { mlkl::operators::cuda::sgemm_v2(a, b, c, alpha, beta); }, M, N, K, alpha, beta, num_runs);
-  test_kernel("SGEMM Kernel V3", [&](mlkl::Tensor &a, mlkl::Tensor &b, mlkl::Tensor &c, float alpha, float beta) { mlkl::operators::cuda::sgemm_v3(a, b, c, alpha, beta); }, M, N, K, alpha, beta, num_runs);
-  test_kernel("SGEMM Kernel V4", [&](mlkl::Tensor &a, mlkl::Tensor &b, mlkl::Tensor &c, float alpha, float beta) { mlkl::operators::cuda::sgemm_v4(a, b, c, alpha, beta); }, M, N, K, alpha, beta, num_runs);
-  test_kernel("SGEMM Kernel V5", [&](mlkl::Tensor &a, mlkl::Tensor &b, mlkl::Tensor &c, float alpha, float beta) { mlkl::operators::cuda::sgemm_v5(a, b, c, alpha, beta); }, M, N, K, alpha, beta, num_runs);
-  test_kernel("SGEMM Kernel V6", [&](mlkl::Tensor &a, mlkl::Tensor &b, mlkl::Tensor &c, float alpha, float beta) { mlkl::operators::cuda::sgemm_v6(a, b, c, alpha, beta); }, M, N, K, alpha, beta, num_runs);
+  test_kernel("SGEMM Kernel V2", [&](mlkl::Tensor *a, mlkl::Tensor *b, mlkl::Tensor *c, float alpha, float beta) { mlkl::operators::cuda::sgemm_v2(a, b, c, alpha, beta); }, M, N, K, alpha, beta, num_runs);
+  test_kernel("SGEMM Kernel V3", [&](mlkl::Tensor *a, mlkl::Tensor *b, mlkl::Tensor *c, float alpha, float beta) { mlkl::operators::cuda::sgemm_v3(a, b, c, alpha, beta); }, M, N, K, alpha, beta, num_runs);
+  test_kernel("SGEMM Kernel V4", [&](mlkl::Tensor *a, mlkl::Tensor *b, mlkl::Tensor *c, float alpha, float beta) { mlkl::operators::cuda::sgemm_v4(a, b, c, alpha, beta); }, M, N, K, alpha, beta, num_runs);
+  test_kernel("SGEMM Kernel V5", [&](mlkl::Tensor *a, mlkl::Tensor *b, mlkl::Tensor *c, float alpha, float beta) { mlkl::operators::cuda::sgemm_v5(a, b, c, alpha, beta); }, M, N, K, alpha, beta, num_runs);
+  test_kernel("SGEMM Kernel V6", [&](mlkl::Tensor *a, mlkl::Tensor *b, mlkl::Tensor *c, float alpha, float beta) { mlkl::operators::cuda::sgemm_v6(a, b, c, alpha, beta); }, M, N, K, alpha, beta, num_runs);
 
   cublasDestroy(handle);
 }
