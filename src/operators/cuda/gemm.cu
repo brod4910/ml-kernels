@@ -487,30 +487,30 @@ void sgemm_v6(const float *a, float alpha, const float *b, float beta, float *c,
 }// namespace launch
 
 void sgemm_v1(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
-  launch::sgemm_v1(a->data, alpha, b->data, beta, c->data, c->shape[0], c->shape[1], a->shape[1]);
+  launch::sgemm_v1(a->fp32_(), alpha, b->fp32_(), beta, c->fp32_(), c->shape[0], c->shape[1], a->shape[1]);
 }
 
 void sgemm_v2(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
-  launch::sgemm_v2(a->data, alpha, b->data, beta, c->data, c->shape[0], c->shape[1], a->shape[1]);
+  launch::sgemm_v2(a->fp32_(), alpha, b->fp32_(), beta, c->fp32_(), c->shape[0], c->shape[1], a->shape[1]);
 }
 
 void sgemm_v3(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
-  launch::sgemm_v3(a->data, alpha, b->data, beta, c->data, c->shape[0], c->shape[1], a->shape[1]);
+  launch::sgemm_v3(a->fp32_(), alpha, b->fp32_(), beta, c->fp32_(), c->shape[0], c->shape[1], a->shape[1]);
 }
 
 void sgemm_v4(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
-  launch::sgemm_v4(a->data, alpha, b->data, beta, c->data, c->shape[0], c->shape[1], a->shape[1]);
+  launch::sgemm_v4(a->fp32_(), alpha, b->fp32_(), beta, c->fp32_(), c->shape[0], c->shape[1], a->shape[1]);
 }
 
 void sgemm_v5(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
-  launch::sgemm_v5(a->data, alpha, b->data, beta, c->data, c->shape[0], c->shape[1], a->shape[1]);
+  launch::sgemm_v5(a->fp32_(), alpha, b->fp32_(), beta, c->fp32_(), c->shape[0], c->shape[1], a->shape[1]);
 }
 
 void sgemm_v6(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
-  launch::sgemm_v6(a->data, alpha, b->data, beta, c->data, c->shape[0], c->shape[1], a->shape[1]);
+  launch::sgemm_v6(a->fp32_(), alpha, b->fp32_(), beta, c->fp32_(), c->shape[0], c->shape[1], a->shape[1]);
 }
 
 void sgemm(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
-  launch::sgemm_v6(a->data, alpha, b->data, beta, c->data, c->shape[0], c->shape[1], a->shape[1]);
+  launch::sgemm_v6(a->fp32_(), alpha, b->fp32_(), beta, c->fp32_(), c->shape[0], c->shape[1], a->shape[1]);
 }
 }// namespace mlkl::operators::cuda

@@ -26,14 +26,15 @@ Tensor *empty(std::vector<int> &shape) {
     }
   }
 
-  tensor->data = reinterpret_cast<decltype(tensor->data)>(malloc(tensor->num_bytes()));
+  tensor->data = malloc(tensor->num_bytes());
 
   return tensor;
 }
 
 void fill(Tensor *tensor, int value) {
   for (size_t i = 0; i < tensor->numel(); ++i) {
-    tensor->data[i] = value;
+    // TODO: Any better way then to pin to fp32 besides templates?
+    tensor->fp32_()[i] = value;
   }
 }
 
@@ -62,12 +63,12 @@ void randn(float *data, size_t numel) {
 Tensor *randn(std::vector<int> &shape) {
   auto tensor = empty(shape);
 
-  randn(tensor->data, tensor->numel());
+  randn(tensor->fp32_(), tensor->numel());
 
   return tensor;
 }
 
 void randn(Tensor *tensor) {
-  randn(tensor->data, tensor->numel());
+  randn(tensor->fp32_(), tensor->numel());
 }
 }// namespace mlkl::operators::cpu

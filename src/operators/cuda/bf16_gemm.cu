@@ -3,7 +3,6 @@
 
 #include <device_types.h>
 #include <vector_types.h>
-
 #include <mma.h>
 
 #include <mlkl/core/basic_math.h>
@@ -11,6 +10,8 @@
 
 // TODO: Delete this and make functions templates
 #define WARP_SIZE 32
+
+using namespace nvcuda;
 
 namespace mlkl::operators::cuda {
 namespace kernel {
@@ -148,7 +149,7 @@ __global__ __launch_bounds__(256) void bf16_gemm_v3(const bf16 *a, float alpha, 
 }// namespace kernel
 
 namespace {
-void launch_bf16_gemm_v1(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
+void launch_bf16_gemm_v1(const bf16 *a, float alpha, const bf16 *b, float beta, float *c, size_t M, size_t N, size_t K) {
   constexpr int WM = 16;
   constexpr int WN = 16;
   constexpr int WK = 16;
@@ -163,7 +164,7 @@ void launch_bf16_gemm_v1(const float *a, float alpha, const float *b, float beta
   kernel::bf16_gemm_v1<WM, WN, WK><<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
 
-void launch_bf16_gemm_v2(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
+void launch_bf16_gemm_v2(const bf16 *a, float alpha, const bf16 *b, float beta, float *c, size_t M, size_t N, size_t K) {
   constexpr int WM = 16;
   constexpr int WN = 16;
   constexpr int WK = 16;
@@ -174,7 +175,7 @@ void launch_bf16_gemm_v2(const float *a, float alpha, const float *b, float beta
   kernel::bf16_gemm_v2<WM, WN, WK><<<grid_dim, block_dim>>>(a, alpha, b, beta, c, M, N, K);
 }
 
-void launch_bf16_gemm_v3(const float *a, float alpha, const float *b, float beta, float *c, size_t M, size_t N, size_t K) {
+void launch_bf16_gemm_v3(const bf16 *a, float alpha, const bf16 *b, float beta, float *c, size_t M, size_t N, size_t K) {
   constexpr int NUM_THREADS = 256;
   constexpr int NUM_WARPS = NUM_THREADS / WARP_SIZE;
   constexpr int WARP_COLS = 4;
@@ -204,19 +205,19 @@ void launch_bf16_gemm_v3(const float *a, float alpha, const float *b, float beta
 }
 }// namespace
 
-void bf16_gemm_v1(Tensor &a, Tensor &b, Tensor &c, float alpha, float beta) {
-  launch_bf16_gemm_v1(a.data, alpha, b.data, beta, c.data, c.shape[0], c.shape[1], a.shape[1]);
+void bf16_gemm_v1(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
+  launch_bf16_gemm_v1(a->bf16_(), alpha, b->bf16_(), beta, c->fp32_(), c->shape[0], c->shape[1], a->shape[1]);
 }
 
-void bf16_gemm_v2(Tensor &a, Tensor &b, Tensor &c, float alpha, float beta) {
-  launch_bf16_gemm_v2(a.data, alpha, b.data, beta, c.data, c.shape[0], c.shape[1], a.shape[1]);
+void bf16_gemm_v2(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
+  launch_bf16_gemm_v2(a->bf16_(), alpha, b->bf16_(), beta, c->fp32_(), c->shape[0], c->shape[1], a->shape[1]);
 }
 
-void bf16_gemm_v3(Tensor &a, Tensor &b, Tensor &c, float alpha, float beta) {
-  launch_bf16_gemm_v3(a.data, alpha, b.data, beta, c.data, c.shape[0], c.shape[1], a.shape[1]);
+void bf16_gemm_v3(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
+  launch_bf16_gemm_v3(a->bf16_(), alpha, b->bf16_(), beta, c->fp32_(), c->shape[0], c->shape[1], a->shape[1]);
 }
 
-void bf16_gemm(Tensor &a, Tensor &b, Tensor &c, float alpha, float beta) {
+void bf16_gemm(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
   bf16_gemm_v1(a, b, c, alpha, beta);
 }
 }// namespace mlkl::operators::cuda

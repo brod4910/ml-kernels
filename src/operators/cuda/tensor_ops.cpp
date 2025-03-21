@@ -74,13 +74,13 @@ void randn(float *data, size_t numel) {
 Tensor *randn(std::vector<int> &shape) {
   auto tensor = empty(shape);
 
-  randn(tensor->data, tensor->numel());
+  randn(tensor->fp32_(), tensor->numel());
 
   return tensor;
 }
 
 void randn(Tensor *tensor) {
-  randn(tensor->data, tensor->numel());
+  randn(tensor->fp32_(), tensor->numel());
 }
 
 // Tensor assert_correctness(Tensor *tensor, Tensor *ref, T epsilon = 1e-6);

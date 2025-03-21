@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
-option(CUDA_ARCH "CUDA architecture" "86")
+set(CUDA_ARCH "86;89" CACHE STRING "CUDA architecture")
 option(BUILD_AVX "Build AVX library version" OFF)
 
 # ---- Find Packages ----
@@ -51,7 +51,7 @@ set_source_files_properties(${CUDA_SRC_FILES} PROPERTIES LANGUAGE CUDA)
 set_source_files_properties(${CUDA_HDR_FILES} PROPERTIES LANGUAGE CUDA)
 
 # Enable CUDA features
-set_target_properties(ml_kernels PROPERTIES CUDA_ARCHITECTURES ${CUDA_ARCH})
+set_target_properties(ml_kernels PROPERTIES CUDA_ARCHITECTURES "${CUDA_ARCH}")
 set_target_properties(ml_kernels PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(ml_kernels PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 set_target_properties(ml_kernels PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
