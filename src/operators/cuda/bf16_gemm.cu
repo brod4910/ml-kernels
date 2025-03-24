@@ -218,6 +218,6 @@ void bf16_gemm_v3(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
 }
 
 void bf16_gemm(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta) {
-  bf16_gemm_v1(a, b, c, alpha, beta);
+  bf16_gemm_v3(a, b, c, alpha, beta);
 }
 }// namespace mlkl::operators::cuda
