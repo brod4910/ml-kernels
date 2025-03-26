@@ -4,6 +4,7 @@
     ],
     "cmake.buildDirectory": "${workspaceFolder}/build",
     "cmake.additionalCompilerSearchDirs": [
-        "/home/luna/miniconda3/envs/triton"
+        "/home/luna/miniconda3/envs/cuda",
+        "/home/brodriguez/anaconda3/envs/cuda"
     ]
 }
