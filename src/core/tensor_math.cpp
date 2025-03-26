@@ -28,4 +28,12 @@ void bf16_gemm(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta, Device 
   }
 }
 
+void attention(Tensor *q, Tensor *k, Tensor *v, Tensor *output, Device device) {
+  if (device == Device::CPU) {
+    operators::cpu::attention(q, k, v, output);
+  } else if (device == Device::CUDA) {
+    throw std::runtime_error("GPU attention not implemented.");
+  }
+}
+
 }// namespace mlkl
