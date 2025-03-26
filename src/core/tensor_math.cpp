@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include <mlkl/core/tensor_math.h>
 #include <mlkl/operators/operators.h>
 
@@ -17,4 +19,13 @@ void sgemm(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta, Device devi
     return operators::cuda::sgemm(a, b, c, alpha, beta);
   }
 }
+
+void bf16_gemm(Tensor *a, Tensor *b, Tensor *c, float alpha, float beta, Device device) {
+  if (device == Device::CPU) {
+    throw std::runtime_error("CPU bf16 gemm not implemented.");
+  } else if (device == Device::CUDA) {
+    return operators::cuda::bf16_gemm(a, b, c, alpha, beta);
+  }
+}
+
 }// namespace mlkl

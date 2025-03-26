@@ -12,3 +12,4 @@
 #include <mlkl/operators/cuda/gemm.h>
 #include <mlkl/operators/cuda/softmax.h>
 #include <mlkl/operators/cuda/tensor_ops.h>
+#include <mlkl/operators/cuda/bf16_gemm.h>

@@ -98,7 +98,7 @@ void sgemm_cuda(int M, int N, int K, float alpha, float beta, int num_runs) {
     int M = c->shape[0];
     int N = c->shape[1];
     int K = a->shape[1];
-    CHECK_CUBLAS_STATUS(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha, b->data, N, a->data, K, &beta, c->data, N));
+    CHECK_CUBLAS_STATUS(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha, b->fp32_(), N, a->fp32_(), K, &beta, c->fp32_(), N));
   };
   // Test CUBLAS
   test_kernel("CUBLAS", cublas_kernel, M, N, K, alpha, beta, num_runs);

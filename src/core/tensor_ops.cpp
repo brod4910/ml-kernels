@@ -76,7 +76,7 @@ bool equals(Tensor *a, Tensor *b, float epsilon) {
   float diff = .0f;
 
   for (size_t i = 0; i < a->numel(); ++i) {
-    diff = fabs((double) a->data[i] - (double) b->data[i]);
+    diff = fabs((double) a->fp32_()[i] - (double) b->fp32_()[i]);
     if (diff > epsilon) {
       return false;
     }

@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstddef>
 #include <functional>
 #include <numeric>
@@ -6,7 +7,34 @@
 
 namespace mlkl {
 size_t Tensor::num_bytes() {
-  return numel() * sizeof(*data);
+  return numel() * dtype_size();
+}
+
+size_t Tensor::dtype_size() {
+  switch (dtype) {
+    case DType::F8:
+      return 1;
+    case DType::F16:
+    case DType::BF16:
+      return 2;
+    default:
+      return 4;
+  }
+}
+
+bf16* Tensor::bf16_() {
+  assert(dtype == DType::BF16);
+  return get_data<bf16>();
+}
+
+fp16* Tensor::fp16_() {
+  assert(dtype == DType::F16);
+  return get_data<fp16>();
+}
+
+fp32* Tensor::fp32_() {
+  assert(dtype == DType::F32);
+  return get_data<fp32>();
 }
 
 size_t Tensor::numel() {

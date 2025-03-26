@@ -16,14 +16,14 @@ enum class Device {
 };
 
 enum class DType {
-  F32,
-  F16,
+  F8,
   BF16,
-  F8
+  F16,
+  F32
 };
 
 struct Tensor {
-  float *data;
+  void *data;
 
   int rank;
   std::vector<int> shape;
@@ -32,6 +32,19 @@ struct Tensor {
   Device device = Device::CPU;
   DType dtype = DType::F32;
 
+  template<typename T>
+  T* get_data() {
+    return reinterpret_cast<T*>(data);
+  }
+
+  bf16* bf16_();
+
+  fp16* fp16_();
+
+  fp32* fp32_();
+
+  size_t dtype_size();
+
   size_t num_bytes();
 
   size_t numel();
@@ -39,4 +52,4 @@ struct Tensor {
   void to(Device device);
 };
 
-}// namespace mlkl
+}// namespace mlkl!
