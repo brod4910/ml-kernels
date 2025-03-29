@@ -4,4 +4,4 @@
 
 #pragma once
 
-void attention_cpu(int M, int N, int K, float alpha, float beta, int num_runs = 100);
+void attention_cpu(int batch_size, int num_heads, int seq_len_q, int seq_len_kv, int head_dim, int num_runs);
