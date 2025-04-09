@@ -3,7 +3,7 @@
 
 namespace mlkl::operators::cpu {
 namespace {
-void softmax(float *input, float *output, int seq_len_q, int seq_len_kv, int head_dim) {
+void softmax(float *input, float *output, int seq_len_q, int seq_len_kv) {
   for (int slq = 0; slq < seq_len_q; ++slq) {
     float curr_max = -std::numeric_limits<float>::infinity();
     float norm_factor = 0.f;
@@ -43,7 +43,7 @@ void head_attention(const float *__restrict__ q,
     }
   }
 
-  softmax(scores, scores, seq_len_q, seq_len_kv, head_dim);
+  softmax(scores, scores, seq_len_q, seq_len_kv);
 
   for (int slq = 0; slq < seq_len_q; ++slq) {
     for (int d = 0; d < head_dim; ++d) {
@@ -52,6 +52,8 @@ void head_attention(const float *__restrict__ q,
       }
     }
   }
+
+  delete[] scores;
 }
 
 void attention(const float *__restrict__ q,
