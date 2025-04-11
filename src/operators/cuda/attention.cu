@@ -18,26 +18,16 @@ using namespace nvcuda;
 namespace mlkl::operators::cuda {
 namespace kernel {
 
-__device__ void off_band_S(fp32 *s, fp32 *m, fp32 *l, fp32 qk_scale, int block_dx, int block_dy) {
+__device__ void off_band_S(fp32 *s, fp32 *m, fp32 *l, fp32 *o, fp32 qk_scale, int block_dx, int block_dy) {
   fp32 m_ij[16] = {-CUDART_INF_F};// intermediate row max
   fp32 l_ij[16] = {0.};           // intermediate norm factors
   fp32 alpha[16];
 
   for (int y = 0; y < block_dy; ++y) {
     for (int x = 0; x < block_dx; ++x) {
-      float new_max = fmaxf(m_ij[y], s[y * block_dx + x]) * qk_scale;
+      float new_max = fmaxf(m_ij[y], s[y * block_dx + x] * qk_scale);
       m_ij[y] = new_max;
-    }
-  }
-
-  for (int y = 0; y < block_dy; ++y) {
-    for (int x = 0; x < block_dx; ++x) {
       s[y * block_dx + x] = exp2f(s[y * block_dx + x] * qk_scale - m_ij[y]);
-    }
-  }
-
-  for (int y = 0; y < block_dy; ++y) {
-    for (int x = 0; x < block_dx; ++x) {
       l_ij[y] += s[y * block_dx + x];
     }
 
@@ -56,20 +46,6 @@ __device__ void on_band_S() {
 __device__ void on_band_range(int *lo, int *hi) {
 }
 
-__device__ void
-s_max(fp32 *s, fp32 *m_ij, fp32 qk_scale, int block_dx, int block_dy) {
-}
-
-__device__ void softmax_star(fp32 *s, fp32 *m_ij, fp32 qk_scale, int block_dx, int block_dy) {
-}
-
-__device__ void nf_sum(fp32 *s, fp32 *l_ij, int block_dx, int block_dy) {
-  for (int y = 0; y < block_dy; ++y) {
-    for (int x = 0; x < block_dx; ++x) {
-      l_ij[y] += s[y * x];
-    }
-  }
-}
 // naive
 __global__ void
 attention_v1(const fp32 *q, const fp32 *k, const fp32 *v, fp32 *output, int batch_size, int num_heads, int seq_len, int head_dim, float qk_scale) {
@@ -86,6 +62,7 @@ attention_v1(const fp32 *q, const fp32 *k, const fp32 *v, fp32 *output, int batc
   __shared__ fp32 s[16 * 16];
   __shared__ fp32 m[16];// row max
   __shared__ fp32 l[16];// norm factors
+  __shared__ fp32 o[16 * 16];
 
   s[tid] = 0.;
   if (tid % 16 == 0) {
@@ -100,19 +77,26 @@ attention_v1(const fp32 *q, const fp32 *k, const fp32 *v, fp32 *output, int batc
     for (int d = 0; d < 16; ++d) {
       s[tid] += q_block[d] * k_block[d];
     }
-  }
+    __syncthreads();
 
-  __syncthreads();
+    if (tid == 0) {
+      for (int y = 0; y < 16; ++y) {
+        for (int x = 0; x < 16; ++x) {
+          off_band_S(s, m, l, o, qk_scale, 16, 16);
+        }
+      }
+    }
 
-  if (tid == 0) {
-    for (int y = 0; y < 16; ++y) {
-      for (int x = 0; x < 16; ++x) {
-        s[y * x] = expf(s[y * x] - m[y]);// / l[y];
+    __syncthreads();
+
+    for (int slq = 0; slq < 16; ++slq) {
+      for (int hd = 0; hd < 16; ++hd) {
+        for (int slkv = 0; slkv < 16; ++slkv) {
+          output[slq * 16 + hd] += s[slq * 16 + slkv] * v[slkv * 16 + hd];
+        }
       }
     }
   }
-
-  __syncthreads();
 }
 }// namespace kernel
 
