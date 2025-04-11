@@ -33,15 +33,15 @@ struct Tensor {
   DType dtype = DType::F32;
 
   template<typename T>
-  T* get_data() {
-    return reinterpret_cast<T*>(data);
+  T *get_data() {
+    return reinterpret_cast<T *>(data);
   }
 
-  bf16* bf16_();
+  bf16 *bf16_();
 
-  fp16* fp16_();
+  fp16 *fp16_();
 
-  fp32* fp32_();
+  fp32 *fp32_();
 
   size_t dtype_size();
 
@@ -50,8 +50,6 @@ struct Tensor {
   size_t numel();
 
   void to(Device device);
-
-
 };
 
-}// namespace mlkl!
+}// namespace mlkl

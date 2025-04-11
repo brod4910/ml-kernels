@@ -6,11 +6,12 @@
 #include <curand.h>
 
 namespace mlkl::operators::cuda {
-Tensor *empty(std::vector<int> &shape) {
+Tensor *empty(std::vector<int> &shape, DType dtype) {
   // Zero‐initialize the Tensor
   Tensor *tensor = new Tensor;
   tensor->device = Device::CUDA;
   tensor->rank = shape.size();
+  tensor->dtype = dtype;
 
   tensor->shape.reserve(tensor->rank);
   tensor->stride.reserve(tensor->rank);
@@ -72,7 +73,7 @@ void randn(float *data, size_t numel) {
 }// namespace
 
 Tensor *randn(std::vector<int> &shape) {
-  auto tensor = empty(shape);
+  auto tensor = empty(shape, DType::F32);
 
   randn(tensor->fp32_(), tensor->numel());
 

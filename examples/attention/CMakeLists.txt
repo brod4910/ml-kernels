@@ -1,5 +1,6 @@
 enable_language(CUDA)
 find_package(CUDAToolkit REQUIRED)
+find_package(CUDNN REQUIRED)
 
 set(SOURCES attention-example.cpp attention_cpu.h attention_cpu.cpp attention_cuda.h attention_cuda.cu)
 

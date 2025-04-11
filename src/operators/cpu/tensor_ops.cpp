@@ -9,11 +9,12 @@
 #include <mlkl/operators/cpu/tensor_ops.h>
 
 namespace mlkl::operators::cpu {
-Tensor *empty(std::vector<int> &shape) {
+Tensor *empty(std::vector<int> &shape, DType dtype) {
   Tensor *tensor = new Tensor;
   tensor->rank = shape.size();
   tensor->shape.reserve(tensor->rank);
   tensor->stride.reserve(tensor->rank);
+  tensor->dtype = dtype;
 
   for (int i = 0; i < tensor->rank; ++i) {
     tensor->shape.push_back(shape[i]);
@@ -61,7 +62,7 @@ void randn(float *data, size_t numel) {
 }// namespace
 
 Tensor *randn(std::vector<int> &shape) {
-  auto tensor = empty(shape);
+  auto *tensor = empty(shape, DType::F32);
 
   randn(tensor->fp32_(), tensor->numel());
 

@@ -29,12 +29,12 @@ void test_kernel(const char *kernel_name,
 
   auto *a_ref = allocator.randn(s1, mlkl::Device::CPU);
   auto *b_ref = allocator.randn(s2, mlkl::Device::CPU);
-  auto *c_ref = allocator.empty(s3, mlkl::Device::CPU);
+  auto *c_ref = allocator.empty(s3, mlkl::DType::F32, mlkl::Device::CPU);
   mlkl::fill(c_ref, 0);
 
-  auto *a = allocator.empty(s1, mlkl::Device::CUDA);
-  auto *b = allocator.empty(s2, mlkl::Device::CUDA);
-  auto *c = allocator.empty(s3, mlkl::Device::CUDA);
+  auto *a = allocator.empty(s1, mlkl::DType::F32, mlkl::Device::CUDA);
+  auto *b = allocator.empty(s2, mlkl::DType::F32, mlkl::Device::CUDA);
+  auto *c = allocator.empty(s3, mlkl::DType::F32, mlkl::Device::CUDA);
 
   mlkl::copy(a_ref, a);
   mlkl::copy(b_ref, b);

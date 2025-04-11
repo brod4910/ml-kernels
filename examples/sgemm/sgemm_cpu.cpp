@@ -1,4 +1,5 @@
 
+#include "mlkl/core/tensor.h"
 #include <chrono>
 #include <iostream>
 
@@ -11,9 +12,9 @@ void sgemm_cpu(int M, int N, int K, float alpha, float beta, int num_runs) {
   std::vector<int> s2{K, N};
   std::vector<int> s3{M, N};
 
-  auto a = allocator.empty(s1, mlkl::Device::CPU);
-  auto b = allocator.empty(s2, mlkl::Device::CPU);
-  auto c = allocator.empty(s3, mlkl::Device::CPU);
+  auto a = allocator.empty(s1, mlkl::DType::F32, mlkl::Device::CPU);
+  auto b = allocator.empty(s2, mlkl::DType::F32, mlkl::Device::CPU);
+  auto c = allocator.empty(s3, mlkl::DType::F32, mlkl::Device::CPU);
 
   long long total_duration = 0;
 

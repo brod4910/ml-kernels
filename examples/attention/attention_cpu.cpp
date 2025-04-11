@@ -1,4 +1,5 @@
 
+#include "mlkl/core/tensor.h"
 #include <chrono>
 #include <iostream>
 
@@ -10,10 +11,10 @@ void attention_cpu(int batch_size, int num_heads, int seq_len_q, int seq_len_kv,
   std::vector<int> s1{batch_size, num_heads, seq_len_q, head_dim};
   std::vector<int> s2{batch_size, num_heads, seq_len_kv, head_dim};
 
-  auto q = allocator.empty(s1, mlkl::Device::CPU);
-  auto k = allocator.empty(s2, mlkl::Device::CPU);
-  auto v = allocator.empty(s2, mlkl::Device::CPU);
-  auto output = allocator.empty(s1, mlkl::Device::CPU);
+  auto q = allocator.empty(s1, mlkl::DType::F32, mlkl::Device::CPU);
+  auto k = allocator.empty(s2, mlkl::DType::F32, mlkl::Device::CPU);
+  auto v = allocator.empty(s2, mlkl::DType::F32, mlkl::Device::CPU);
+  auto output = allocator.empty(s1, mlkl::DType::F32, mlkl::Device::CPU);
 
   long long total_duration = 0;
 

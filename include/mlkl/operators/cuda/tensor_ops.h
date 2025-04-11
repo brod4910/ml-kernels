@@ -3,7 +3,7 @@
 #include <mlkl/core/tensor.h>
 
 namespace mlkl::operators::cuda {
-Tensor *empty(std::vector<int> &shape);
+Tensor *empty(std::vector<int> &shape, DType dtype);
 
 void fill(Tensor *tensor, int value);
 

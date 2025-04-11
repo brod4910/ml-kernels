@@ -8,11 +8,11 @@
 #include <mlkl/core/tensor_ops.h>
 
 namespace mlkl {
-Tensor *empty(std::vector<int> &shape, Device device) {
+Tensor *empty(std::vector<int> &shape, DType dtype, Device device) {
   if (device == mlkl::Device::CPU) {
-    return operators::cpu::empty(shape);
+    return operators::cpu::empty(shape, dtype);
   } else {
-    return operators::cuda::empty(shape);
+    return operators::cuda::empty(shape, dtype);
   }
 }
 
