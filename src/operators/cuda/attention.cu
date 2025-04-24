@@ -37,13 +37,41 @@ __device__ void off_band_S(fp32 *s, fp32 *m, fp32 *l, fp32 *o, fp32 qk_scale, in
   }
 }
 
-__device__ void off_band_range(int *lo, int *hi) {
+__device__ void off_band_range(int *lo, int *hi, int block_dy) {
+  *lo = 0;
+  *hi = blockIdx.y * block_dy;
 }
 
-__device__ void on_band_S() {
+__device__ void on_band_S(fp32 *s, fp32 *m, fp32 *l, fp32 *o, fp32 qk_scale, int block_dx, int block_dy) {
+  fp32 m_ij[16] = {-CUDART_INF_F};// intermediate row max
+  fp32 l_ij[16] = {0.};           // intermediate norm factors
+  fp32 alpha[16];
+
+  int offset_m = blockIdx.y * block_dy + (threadIdx.x / block_dy);
+  int offset_n = threadIdx.x % block_dx;
+
+  for (int y = 0; y < block_dy; ++y) {
+    for (int x = 0; x < block_dx; ++x) {
+      float new_max = fmaxf(m_ij[y], s[y * block_dx + x] * qk_scale);
+      m_ij[y] = new_max;
+      s[y * block_dx + x] = exp2f(s[y * block_dx + x] * qk_scale - m_ij[y]);
+      l_ij[y] += s[y * block_dx + x];
+    }
+
+    alpha[y] = exp2f(m[y] - m_ij[y]);
+    m[y] = m_ij[y];
+    l[y] = l[y] * alpha[y] + l_ij[y];
+  }
 }
 
-__device__ void on_band_range(int *lo, int *hi) {
+__device__ void on_band_range(int *lo, int *hi, int block_dy) {
+  *lo = blockIdx.y * block_dy;
+  *hi = (blockIdx.y + 1) * block_dy;
+}
+
+__device__ void non_causal_range(int *lo, int *hi, int seq_len) {
+  *lo = 0;
+  *hi = seq_len;
 }
 
 // naive
