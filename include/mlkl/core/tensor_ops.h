@@ -4,7 +4,7 @@
 #include <vector>
 
 namespace mlkl {
-Tensor *empty(std::vector<int> &shape, Device device);
+Tensor *empty(std::vector<int> &shape, DType dtype, Device device);
 
 void fill(Tensor *tensor, int value);
 

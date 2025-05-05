@@ -5,11 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "CUDA C++: Launch",
+            "name": "SGEMM CUDA C++: Launch",
             "type": "cuda-gdb",
             "request": "launch",
             "program": "${workspaceFolder}/build/examples/sgemm/sgemm-example",
             "debuggerPath": "/home/luna/miniconda3/envs/triton/bin/cuda-gdb"
+        },
+        {
+            "name": "Attention CUDA C++: Launch",
+            "type": "cuda-gdb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/attention/attention-example",
+            "debuggerPath": "/home/luna/miniconda3/envs/cuda/bin/cuda-gdb"
         },
         {
             "name": "CUDA C++: Attach",

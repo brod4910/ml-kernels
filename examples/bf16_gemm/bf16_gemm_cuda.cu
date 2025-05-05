@@ -7,28 +7,28 @@
 #include <mlkl/operators/cuda/gemm.h>
 #include <mlkl/utils/device.h>
 
-#include <cublas_v2.h>
 #include <cublasLt.h>
+#include <cublas_v2.h>
 #include <cuda_runtime_api.h>
 
-#define CHECK_CUBLAS(call)                                                    \
-    {                                                                         \
-        cublasStatus_t status = call;                                         \
-        if (status != CUBLAS_STATUS_SUCCESS) {                                \
-            std::cerr << "cuBLAS Error: " << status << " at line " << __LINE__ \
-                      << std::endl;                                           \
-            exit(EXIT_FAILURE);                                               \
-        }                                                                     \
-    }
+#define CHECK_CUBLAS(call)                                               \
+  {                                                                      \
+    cublasStatus_t status = call;                                        \
+    if (status != CUBLAS_STATUS_SUCCESS) {                               \
+      std::cerr << "cuBLAS Error: " << status << " at line " << __LINE__ \
+                << std::endl;                                            \
+      exit(EXIT_FAILURE);                                                \
+    }                                                                    \
+  }
 
 auto cublas_kernel = [](mlkl::Tensor *a, mlkl::Tensor *b, mlkl::Tensor *c, float alpha, float beta) {
   cublasLtHandle_t handle;
   CHECK_CUBLAS(cublasLtCreate(&handle));
-  
+
   int M = c->shape[0];
   int N = c->shape[1];
   int K = a->shape[1];
-  
+
   cublasLtMatmulDesc_t operationDesc;
   cublasLtMatrixLayout_t descA, descB, descC;
 
@@ -36,7 +36,7 @@ auto cublas_kernel = [](mlkl::Tensor *a, mlkl::Tensor *b, mlkl::Tensor *c, float
   CHECK_CUBLAS(cublasLtMatrixLayoutCreate(&descA, CUDA_R_16BF, M, K, M));
   CHECK_CUBLAS(cublasLtMatrixLayoutCreate(&descB, CUDA_R_16BF, K, N, K));
   CHECK_CUBLAS(cublasLtMatrixLayoutCreate(&descC, CUDA_R_32F, M, N, M));
-  
+
   CHECK_CUBLAS(cublasLtMatmul(handle, operationDesc,
                               &alpha, a->bf16_(), descA,
                               b->bf16_(), descB,
@@ -57,12 +57,12 @@ void test_kernel(const char *kernel_name,
 
   auto *a_ref = allocator.randn(s1, mlkl::Device::CPU);
   auto *b_ref = allocator.randn(s2, mlkl::Device::CPU);
-  auto *c_ref = allocator.empty(s3, mlkl::Device::CPU);
+  auto *c_ref = allocator.empty(s3, mlkl::DType::BF16, mlkl::Device::CPU);
   mlkl::fill(c_ref, 0);
 
-  auto *a = allocator.empty(s1, mlkl::Device::CUDA);
-  auto *b = allocator.empty(s2, mlkl::Device::CUDA);
-  auto *c = allocator.empty(s3, mlkl::Device::CUDA);
+  auto *a = allocator.empty(s1, mlkl::DType::BF16, mlkl::Device::CUDA);
+  auto *b = allocator.empty(s2, mlkl::DType::BF16, mlkl::Device::CUDA);
+  auto *c = allocator.empty(s3, mlkl::DType::BF16, mlkl::Device::CUDA);
 
   mlkl::copy(a_ref, a);
   mlkl::copy(b_ref, b);

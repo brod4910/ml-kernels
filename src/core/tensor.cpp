@@ -22,17 +22,17 @@ size_t Tensor::dtype_size() {
   }
 }
 
-bf16* Tensor::bf16_() {
+bf16 *Tensor::bf16_() {
   assert(dtype == DType::BF16);
   return get_data<bf16>();
 }
 
-fp16* Tensor::fp16_() {
+fp16 *Tensor::fp16_() {
   assert(dtype == DType::F16);
   return get_data<fp16>();
 }
 
-fp32* Tensor::fp32_() {
+fp32 *Tensor::fp32_() {
   assert(dtype == DType::F32);
   return get_data<fp32>();
 }
@@ -46,7 +46,7 @@ void Tensor::to(Device device) {
     return;
   }
 
-  auto *temp = empty(shape, device);
+  auto *temp = empty(shape, this->dtype, device);
   copy(this, temp);
   destroy(this);
 

@@ -10,7 +10,7 @@ void softmax_cpu(int M, int N, int num_runs) {
   auto allocator = mlkl::TensorAllocator();
 
   auto input = allocator.randn(shape, mlkl::Device::CPU);
-  auto output = allocator.empty(shape, mlkl::Device::CPU);
+  auto output = allocator.empty(shape, mlkl::DType::F32, mlkl::Device::CPU);
 
   long long total_duration = 0;
 

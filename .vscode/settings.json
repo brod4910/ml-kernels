@@ -1,9 +1,13 @@
 {
     "cmake.configureArgs": [
-        "-DBUILD_CUDA=ON"
+        "-DBUILD_CUDA=ON",
+        "-DCUDNN_LIBRARY_PATH=/home/luna/miniconda3/envs/cuda/lib/python3.11/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
+        "-DCUDNN_INCLUDE_DIR=/home/luna/miniconda3/envs/cuda/lib/python3.11/site-packages/nvidia/cudnn/include"
     ],
     "cmake.buildDirectory": "${workspaceFolder}/build",
     "cmake.additionalCompilerSearchDirs": [
-        "/home/luna/miniconda3/envs/triton"
+        "/home/luna/miniconda3/envs/cuda",
+        "/home/brodriguez/anaconda3/envs/cuda",
+        "/home/luna/anaconda3/envs/cuda/include",
     ]
 }

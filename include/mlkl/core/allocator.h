@@ -15,8 +15,8 @@ struct TensorAllocator {
     }
   }
 
-  Tensor *empty(std::vector<int> &shape, Device device) {
-    auto tensor = mlkl::empty(shape, device);
+  Tensor *empty(std::vector<int> &shape, DType dtype, Device device) {
+    auto tensor = mlkl::empty(shape, dtype, device);
     tensors.push_back(tensor);
     return tensor;
   }
@@ -28,7 +28,7 @@ struct TensorAllocator {
   }
 
   Tensor *copy(Tensor *tensor, Device device) {
-    auto *output = this->empty(tensor->shape, device);
+    auto *output = this->empty(tensor->shape, tensor->dtype, device);
     mlkl::copy(tensor, output);
 
     return tensor;

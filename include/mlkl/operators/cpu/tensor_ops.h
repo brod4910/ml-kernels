@@ -6,7 +6,7 @@
 #include <mlkl/core/tensor.h>
 
 namespace mlkl::operators::cpu {
-Tensor *empty(std::vector<int> &shape);
+Tensor *empty(std::vector<int> &shape, DType dtype);
 
 void fill(Tensor *tensor, int value);
 
